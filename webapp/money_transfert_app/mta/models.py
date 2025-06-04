@@ -1,7 +1,8 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 
-from money_transfert_app.money_transfert_app import settings
+# from money_transfert_app import settings
+from django.contrib.auth import get_user_model
 
 CURRENCY_CHOICES = [
     ('EUR', 'Euro'),
@@ -18,8 +19,12 @@ MOVEMENT_TYPES = [
     ('IN', 'Entrée'),
     ('OUT', 'Sortie'),
 ]
+
+User = get_user_model()
+
 class Stock(models.Model):
-    currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES),
+    name = models.CharField(max_length=100, blank=True, null=True)
+    currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES)
     amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     location = models.CharField(max_length=10, choices=LOCATION_CHOICES)
 
@@ -32,7 +37,10 @@ class Stock(models.Model):
         return self.location == 'EUROPE'
 
     def __str__(self):
-        return f"{self.amount} {self.currency}"
+        base = self.location
+        if self.name:
+            base = self.name
+        return base
     
 class StockMovement(models.Model):
     """
@@ -46,8 +54,8 @@ class StockMovement(models.Model):
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     reason = models.CharField(max_length=250, blank=True, null=True)
     created_at = models.DateTimeField(auto_now=True)
-    create_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
-
+    # create_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     # Optional for transfers from one stock to another
     destination_stock = models.ForeignKey(Stock, null=True, blank=True, on_delete=models.SET_NULL, related_name='incoming_transfers')
     custom_exchange_rate = models.DecimalField(max_digits=10, decimal_places=4, null=True, blank=True)
@@ -59,18 +67,19 @@ class StockMovement(models.Model):
     
         # Use custom rate if set
         if self.custom_exchange_rate:
-            return self.custom_exchange_rate
+            rate_value = self.custom_exchange_rate
 
         # Otherwise, get latest known rate
-        rate = ExchangeRate.objects.filter(
-            from_currency=self.stock.currency,
-            to_currency=self.destination_stock.currency
-        ).order_by('-created_at').first()
+        else:
+            rate = ExchangeRate.objects.filter(
+                from_currency=self.stock.currency,
+                to_currency=self.destination_stock.currency
+            ).order_by('-created_at').first()
 
-        if not rate:
-            raise ValidationError("Aucun taux de change défini pour cette conversion.")
-
-        return rate.rate
+            if not rate:
+                raise ValidationError("Aucun taux de change défini pour cette conversion.")
+            rate_value = rate.rate
+        return rate_value
 
                 
                     
@@ -87,7 +96,7 @@ class StockMovement(models.Model):
         if self.destination_stock:
             if self.destination_stock == self.stock:
                 raise ValidationError("La destination des fonds doit être différente de la source.")
-            if self.stock.currency != self.destination_stock.currency and not self.exchange_rate:
+            if self.stock.currency != self.destination_stock.currency and not self.get_stock_transfer_rate():
                 raise ValidationError("Un taux de change est requis si les devises diffèrent.")
         if self.destination_stock:
             self.get_stock_transfer_rate()
@@ -107,11 +116,11 @@ class StockMovement(models.Model):
                 incoming_amount = self.amount * rate_value
 
                 StockMovement(
-                    Stock=self.destination_stock,
+                    stock=self.destination_stock,
                     type='IN',
                     amount=incoming_amount,
                     reason=f"Transfert depuis {self.stock.location} en {self.stock.currency} vers {self.destination_stock.location} en {self.destination_stock.currency}",
-                    created_by=self.create_by
+                    created_by=self.created_by
                 )
 
         self.stock.save()
@@ -131,7 +140,7 @@ class ExchangeRate(models.Model):
     to_currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES)
     rate = models.DecimalField(max_digits=10, decimal_places=4)
     created_at = models.DateTimeField(auto_now_add=True)
-    defined_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    defined_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
 
     class Meta:
         unique_together = ('from_currency', 'to_currency', 'created_at')

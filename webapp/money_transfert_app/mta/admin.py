@@ -5,14 +5,14 @@ from .models import Stock, StockMovement, ExchangeRate
 class StockAdmin(admin.ModelAdmin):
     list_display = ('currency', 'location', 'amount')
     list_filter = ('location', 'currency')
-    search_fields = ('currency')
+    search_fields = ('currency',)
 
 @admin.register(StockMovement)
 class StockMovementAdmin(admin.ModelAdmin):
     list_display = ('type', 'stock', 'amount', 'destination_stock', 'get_transfer_rate', 'created_at', 'created_by')
     list_filter = ('type', 'created_by', 'created_at', 'stock__location', 'stock__currency', 'destination_stock__location')
     search_fields = ('created_by', 'reason')
-    autocomplete_fields = ['stock', 'destination_stock', 'created_by', 'created_at']
+    autocomplete_fields = ['stock', 'destination_stock']
     readonly_fields = ('created_at', 'created_by')
 
     def get_transfer_rate(self, obj):
