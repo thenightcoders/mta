@@ -102,26 +102,22 @@ class StockMovement(models.Model):
             self.get_stock_transfer_rate()
                     
     def save(self, *args, **kwargs):
-        is_new = self._state.adding
+        # is_new = self._state.adding
         self.validation()
         
         # update the stock balance if a deposit/withdrawal or a tranfer is operated
-        if is_new:
-            if self.type == 'IN':
-                self.stock.amount += self.amount
-            elif self.type == 'OUT':
-                self.stock.amount -= self.amount
-            if self.destination_stock:
-                rate_value = self.get_stock_transfer_rate()
-                incoming_amount = self.amount * rate_value
-
-                StockMovement(
-                    stock=self.destination_stock,
-                    type='IN',
-                    amount=incoming_amount,
-                    reason=f"Transfert depuis {self.stock.location} en {self.stock.currency} vers {self.destination_stock.location} en {self.destination_stock.currency}",
-                    created_by=self.created_by
-                )
+        
+        if self.type == 'IN':
+            self.stock.amount += self.amount
+        elif self.type == 'OUT':
+            self.stock.amount -= self.amount
+        if self.destination_stock:
+            rate_value = self.get_stock_transfer_rate()
+            incoming_amount = self.amount * rate_value
+            # Explicitly update destination stock balance here
+            self.destination_stock.amount += incoming_amount
+            self.destination_stock.save()
+                
 
         self.stock.save()
 
