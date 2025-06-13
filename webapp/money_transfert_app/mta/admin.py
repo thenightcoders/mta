@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import Stock, StockMovement, ExchangeRate
+from .models import Stock, StockMovement, ExchangeRate, Transfer
+from .models import CommissionDistribution
 
 @admin.register(Stock)
 class StockAdmin(admin.ModelAdmin):
@@ -29,6 +30,39 @@ class ExchangeRateAdmin(admin.ModelAdmin):
     list_display = ('from_currency', 'to_currency', 'rate', 'created_at', 'defined_by')
     list_filter = ('from_currency', 'to_currency')
     search_fields = ('from_currency', 'to_currency')
+
+class CommissionDistributionInline(admin.StackedInline):
+    model = CommissionDistribution
+    can_delete = False
+    readonly_fields = ('total_commission', 'declaring_agent_amount', 'manager_amount')
+    extra = 0
+
+
+@admin.register(Transfer)
+class TransferAdmin(admin.ModelAdmin):
+    inlines = [CommissionDistributionInline]
+
+    list_display = (
+        'beneficiary_name', 'beneficiary_phone', 'amount',
+        'received_currency', 'method', 'agent', 'status',
+        'created_at'
+    )
+
+    list_filter = ('agent', 'status', 'received_currency')
+    search_fields = ('beneficiary_name', 'validated_by')
+    readonly_fields = ('created_at',)
+
+@admin.register(CommissionDistribution)
+class CommissionDistributionAdmin(admin.ModelAdmin):
+    list_display = (
+        'transfer', 'agent', 'total_commission',
+        'declaring_agent_amount', 'manager_amount',
+        'agent', 'created_at'
+    )
+    list_filter = ('created_at', 'agent')
+    search_fields = ('transfer__beneficiary_name', 'transfer__agent__username')
+    readonly_fields = ('created_at',)
+
 
 admin.site.site_header = "Money Transfer Admin"
 admin.site.site_title = "Gestion de Transferts"

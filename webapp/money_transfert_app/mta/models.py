@@ -1,7 +1,9 @@
 from django.db import models
 from django.core.exceptions import ValidationError
-
+from phonenumber_field.modelfields import PhoneNumberField
 # from money_transfert_app import settings
+from django.db.models import Q
+
 from django.contrib.auth import get_user_model
 
 CURRENCY_CHOICES = [
@@ -123,11 +125,11 @@ class StockMovement(models.Model):
 
         super().save(*args, **kwargs)
 
-        def __str__(self):
-            base = f"{self.get_type_display()} de {self.amount} {self.stock.currency}"
-            if self.destination_stock:
-                base += f"vers {self.destination_stock.location} en {self.destination_stock.get_currency_display()}"
-            return base
+    def __str__(self):
+        base = f"{self.get_type_display()} de {self.amount} {self.stock.currency}"
+        if self.destination_stock:
+            base += f"vers {self.destination_stock.location} en {self.destination_stock.get_currency_display()}"
+        return base
         
 
     
@@ -143,3 +145,80 @@ class ExchangeRate(models.Model):
 
     def __str__(self):
         return f"{self.from_currency} → {self.to_currency}: {self.rate}"
+
+WITHDRAWAL_METHOD = [
+    ('CASH', 'Cash'),
+    ('LUMICASH', 'Lumicash'),
+    ('ECOCASH', 'Ecocash'),
+]
+
+TRANSFER_STATUS = [
+    ('PENDING', 'En attente'),
+    ('VALIDATED', 'Validé'),
+    ('COMPLETED', 'Complété'),
+    ('CANCELED', 'Annulé'),
+]
+
+class Transfer(models.Model):
+    beneficiary_name = models.CharField(max_length=100)
+    beneficiary_phone = models.CharField(max_length=20)
+    method = models.CharField(max_length=50, choices=WITHDRAWAL_METHOD)
+    agent = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='transfers_made', null=True)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    sent_currency =  models.CharField(max_length=3, choices=CURRENCY_CHOICES)
+    received_currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES)
+    comment = models.TextField(blank=True, null=True)
+    status = models.CharField(max_length=10, choices=TRANSFER_STATUS, default='PENDING')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    validated_by = models.ForeignKey(
+    User,
+    null=True,
+    blank=True,
+    on_delete=models.SET_NULL,
+    related_name='validated_transfers'
+    )
+
+    executed_by = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='executed_transfers'
+    )
+
+    def __str__(self):
+        return f"{self.beneficiary_name} - {self.amount} ({self.status}) opéré par {self.agent}"
+    
+class CommissionConfig(models.Model):
+    manager = models.ForeignKey(User, on_delete=models.CASCADE)
+    min_amount = models.DecimalField(max_digits=12, decimal_places=2)
+    max_amount = models.DecimalField(max_digits=12, decimal_places=2)
+    commission_rate = models.DecimalField(max_digits=5, decimal_places=2)  # % on total
+    agent_share = models.DecimalField(max_digits=5, decimal_places=2)  # % of the commission
+    currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES)
+    created_at = models.DateTimeField(auto_now_add=True)
+    active = models.BooleanField(default=True)
+    def clean(self):
+        if self.agent_share < 0 or self.agent_share > 100:
+            raise ValidationError("Part agent invalide.")
+        if self.commission_rate < 0 or self.commission_rate > 100:
+            raise ValidationError("Commission totale invalide.")
+    
+    class Meta:
+        constraints = [
+            models.CheckConstraint(check=Q(agent_share__gte=0) & Q(agent_share__lte=100), name='valid_agent_share'),
+            models.UniqueConstraint(fields=['manager', 'min_amount', 'max_amount', 'currency', 'active'], name='unique_config_range')
+        ]
+
+    def __str__(self):
+        return f"{self.commission_rate}% de commission pour [{self.min_amount} - {self.max_amount}] {self.currency} => (Agent: {self.agent_share}%)"
+    
+class CommissionDistribution(models.Model):
+    transfer = models.ForeignKey(Transfer, on_delete=models.CASCADE)
+    agent = models.ForeignKey(User, models.CASCADE)
+    config_used = models.ForeignKey(CommissionConfig, on_delete=models.SET_NULL, null=True)
+    total_commission = models.DecimalField(max_digits=12, decimal_places=2)
+    declaring_agent_amount = models.DecimalField(max_digits=12, decimal_places=2)
+    manager_amount = models.DecimalField(max_digits=12, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
