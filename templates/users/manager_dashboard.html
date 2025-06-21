@@ -1,0 +1,402 @@
+{% extends 'base.html' %}
+
+{% block title %}Manager Dashboard - Money Transfer App{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-1">
+            <i class="bi bi-speedometer2"></i> Manager Dashboard
+            {% if user.is_superuser %}
+                <span class="badge bg-danger ms-2">SUPERUSER</span>
+            {% endif %}
+        </h1>
+        <small class="text-muted d-block mb-3">Welcome, {{ user.get_full_name|default:user.username }}</small>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <i class="bi bi-people display-6"></i>
+                    </div>
+                    <div>
+                        <h5 class="card-title">Active Agents</h5>
+                        <h2 class="mb-0">{{ total_agents }}</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <i class="bi bi-clock display-6"></i>
+                    </div>
+                    <div>
+                        <h5 class="card-title">Pending Transfers</h5>
+                        <h2 class="mb-0">{{ pending_transfers }}</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <i class="bi bi-check-circle display-6"></i>
+                    </div>
+                    <div>
+                        <h5 class="card-title">Validated</h5>
+                        <h2 class="mb-0">{{ validated_transfers }}</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <i class="bi bi-check-all display-6"></i>
+                    </div>
+                    <div>
+                        <h5 class="card-title">Completed</h5>
+                        <h2 class="mb-0">{{ completed_transfers }}</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightning"></i> Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'create_user' %}" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-person-plus"></i> Create User
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'user_list' %}" class="btn btn-outline-secondary w-100">
+                            <i class="bi bi-people"></i> Manage Users
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'create_transfer' %}" class="btn btn-outline-success w-100">
+                            <i class="bi bi-plus-circle"></i> New Transfer
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'pending_transfers' %}" class="btn btn-outline-warning w-100">
+                            <i class="bi bi-clock"></i> Pending
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'stock_list' %}" class="btn btn-outline-info w-100">
+                            <i class="bi bi-bank"></i> Stock
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'exchange_rate_list' %}" class="btn btn-outline-warning w-100">
+                            <i class="bi bi-currency-exchange"></i> Rates
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'commission_config_list' %}" class="btn btn-outline-dark w-100">
+                            <i class="bi bi-percent"></i> Commissions
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stock Overview and Recent Transfers -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-bank"></i> Stock Overview
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if stocks %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Currency</th>
+                                    <th>Location</th>
+                                    <th>Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stock in stocks %}
+                                <tr>
+                                    <td><span class="badge bg-primary">{{ stock.currency }}</span></td>
+                                    <td>{{ stock.get_location_display }}</td>
+                                    <td class="text-end">
+                                        <strong>{{ stock.amount|floatformat:2 }}</strong>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No stock data available</p>
+                    <a href="{% url 'create_stock' %}" class="btn btn-sm btn-primary">
+                        <i class="bi bi-plus"></i> Add Stock
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-percent"></i> Commission Overview
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if total_commissions.total_paid %}
+                    <div class="row text-center mb-3">
+                        <div class="col-12">
+                            <h4 class="text-primary">{{ total_commissions.total_paid|floatformat:2 }} EUR</h4>
+                            <small class="text-muted">Total Commissions Paid</small>
+                        </div>
+                    </div>
+
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="text-success fw-bold">{{ total_commissions.total_to_agents|floatformat:2 }}</div>
+                            <small class="text-muted">To Agents</small>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-info fw-bold">{{ total_commissions.total_to_managers|floatformat:2 }}</div>
+                            <small class="text-muted">To Managers</small>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <h6 class="mb-2">Recent Commissions</h6>
+                    {% for commission in recent_commissions %}
+                    <div class="d-flex justify-content-between align-items-center py-1">
+                        <div>
+                            <small>Transfer #{{ commission.transfer.id }}</small>
+                            <br><small class="text-muted">{{ commission.agent.username }}</small>
+                        </div>
+                        <div class="text-end">
+                            <small class="text-success">{{ commission.total_commission|floatformat:2 }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-3">
+                        <i class="bi bi-percent display-4 text-muted"></i>
+                        <p class="text-muted mt-2 mb-0">No commissions yet</p>
+                        <small class="text-muted">Validate transfers to generate commissions</small>
+                    </div>
+                {% endif %}
+
+                <div class="text-center mt-3">
+                    <a href="{% url 'commission_config_list' %}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-gear"></i> Manage Configurations
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-clock-history"></i> Recent Transfers
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if recent_transfers %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Beneficiary</th>
+                                    <th>Amount</th>
+                                    <th>Agent</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for transfer in recent_transfers %}
+                                <tr>
+                                    <td>{{ transfer.beneficiary_name }}</td>
+                                    <td>{{ transfer.amount }} {{ transfer.sent_currency }}</td>
+                                    <td>{{ transfer.agent.username }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if transfer.status == 'PENDING' %}warning{% elif transfer.status == 'VALIDATED' %}info{% elif transfer.status == 'COMPLETED' %}success{% else %}danger{% endif %}">
+                                            {{ transfer.get_status_display }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-center mt-2">
+                        <a href="{% url 'transfer_list' %}" class="btn btn-sm btn-outline-primary">
+                            View All Transfers
+                        </a>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No transfers yet</p>
+                    <a href="{% url 'create_transfer' %}" class="btn btn-sm btn-primary">
+                        <i class="bi bi-plus"></i> Create Transfer
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-activity"></i> Recent System Activity
+                    {% if user.is_superuser %}
+                        <span class="badge bg-danger ms-2">SUPERUSER VIEW</span>
+                    {% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if recent_activities %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Action</th>
+                                    <th>Details</th>
+                                    <th>Time</th>
+                                    {% if user.is_superuser %}
+                                    <th>IP</th>
+                                    {% endif %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for activity in recent_activities %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-{% if activity.user.is_superuser %}danger{% elif activity.user.is_manager %}success{% else %}primary{% endif %}">
+                                            {% if activity.user.is_superuser %}SUPER{% else %}{{ activity.user.get_user_type_display }}{% endif %}
+                                        </span>
+                                        {{ activity.user.get_full_name|default:activity.user.username }}
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold">{{ activity.action|title }}</span>
+                                    </td>
+                                    <td>
+                                        {% if activity.details %}
+                                            <div class="activity-details">
+                                                {% for key, value in activity.details.items %}
+                                                    {% if key == 'transfer_id' %}
+                                                        <span class="badge bg-info">#{{ value }}</span>
+                                                    {% elif key == 'amount' %}
+                                                        <span class="text-success fw-bold">{{ value }}</span>
+                                                    {% elif key == 'currency' or key == 'sent_currency' %}
+                                                        <span class="badge bg-primary">{{ value }}</span>
+                                                    {% elif key == 'beneficiary_name' %}
+                                                        <span class="text-primary">{{ value }}</span>
+                                                    {% elif key == 'new_status' or key == 'status' %}
+                                                        <span class="badge bg-secondary">{{ value }}</span>
+                                                    {% elif key == 'commission_amount' and value != '0' %}
+                                                        <span class="text-warning">+{{ value }}</span>
+                                                    {% elif key == 'error' %}
+                                                        <span class="text-danger">{{ value|truncatechars:50 }}</span>
+                                                    {% elif forloop.counter0 < 3 %}
+                                                        <small class="text-muted">{{ key|title }}: {{ value|truncatechars:30 }}</small>
+                                                        {% if not forloop.last %} | {% endif %}
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-muted">
+                                        <span data-bs-toggle="tooltip" title="{{ activity.timestamp|date:'F d, Y H:i:s' }}">
+                                            {{ activity.timestamp|timesince }} ago
+                                        </span>
+                                    </td>
+                                    {% if user.is_superuser %}
+                                    <td class="text-muted small">{{ activity.ip_address|default:"—" }}</td>
+                                    {% endif %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="text-center mt-3">
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle"></i>
+                            Showing latest system activities.
+                            {% if not user.is_superuser %}IP addresses hidden for security.{% endif %}
+                        </small>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No recent activity</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Initialize tooltips
+var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+  return new bootstrap.Tooltip(tooltipTriggerEl)
+})
+
+// Auto-refresh activity feed every 30 seconds for superusers
+{% if user.is_superuser %}
+setInterval(function() {
+    // Only refresh if the page is visible
+    if (!document.hidden) {
+        location.reload();
+    }
+}, 30000);
+{% endif %}
+</script>
+{% endblock %}

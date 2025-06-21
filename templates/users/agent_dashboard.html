@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+
+{% block title %}Agent Dashboard - Money Transfer App{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="bi bi-person-workspace"></i> Agent Dashboard
+            <small class="text-muted">Welcome, {{ user.get_full_name|default:user.username }}</small>
+        </h1>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-md-2">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <i class="bi bi-list-check display-4"></i>
+                <h5 class="mt-2">Total Transfers</h5>
+                <h2>{{ my_transfer_stats.total }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-2">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <i class="bi bi-clock display-4"></i>
+                <h5 class="mt-2">Pending</h5>
+                <h2>{{ my_transfer_stats.pending }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-2">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <i class="bi bi-check-circle display-4"></i>
+                <h5 class="mt-2">Validated</h5>
+                <h2>{{ my_transfer_stats.validated }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-2">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <i class="bi bi-check-all display-4"></i>
+                <h5 class="mt-2">Completed</h5>
+                <h2>{{ my_transfer_stats.completed }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card bg-gradient" style="background: linear-gradient(135deg, #28a745, #20c997);">
+            <div class="card-body text-white text-center">
+                <i class="bi bi-cash-coin display-4"></i>
+                <h5 class="mt-2">Total Commission Earned</h5>
+                <h2>{{ total_commission_earned|floatformat:2 }} EUR</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightning"></i> Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'create_transfer' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Declare New Transfer
+                    </a>
+                    <a href="#" class="btn btn-outline-success">
+                        <i class="bi bi-cash-coin"></i> Declare Money Deposit
+                    </a>
+                    <a href="{% url 'transfer_list' %}" class="btn btn-outline-info">
+                        <i class="bi bi-list-check"></i> My Transfers
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-info-circle"></i> Your Info
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Name:</strong> {{ user.get_full_name|default:user.username }}</p>
+                        <p><strong>Username:</strong> {{ user.username }}</p>
+                        <p><strong>Email:</strong> {{ user.email|default:"Not set" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Location:</strong> {{ user.location|default:"Not set" }}</p>
+                        <p><strong>Phone:</strong> {{ user.phone|default:"Not set" }}</p>
+                        <p><strong>Member since:</strong> {{ user.created_at|date:"M d, Y" }}</p>
+                    </div>
+                </div>
+                <a href="{% url 'profile' %}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-pencil"></i> Update Profile
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- My Recent Transfers -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-arrow-left-right"></i> My Recent Transfers
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if my_transfers %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Beneficiary</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Commission</th>
+                                    <th>Created</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for transfer in my_transfers %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'transfer_detail' transfer.id %}" class="text-decoration-none">
+                                            #{{ transfer.id }}
+                                        </a>
+                                    </td>
+                                    <td>{{ transfer.beneficiary_name }}</td>
+                                    <td>
+                                        <strong>{{ transfer.amount }}</strong> {{ transfer.sent_currency }}
+                                        {% if transfer.sent_currency != transfer.received_currency %}
+                                            → {{ transfer.received_currency }}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% if transfer.status == 'PENDING' %}warning{% elif transfer.status == 'VALIDATED' %}info{% elif transfer.status == 'COMPLETED' %}success{% else %}danger{% endif %}">
+                                            {{ transfer.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if transfer.commission %}
+                                            <span class="text-success fw-bold">
+                                                +{{ transfer.commission.declaring_agent_amount }} {{ transfer.sent_currency }}
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-muted">{{ transfer.created_at|date:"M d, Y H:i" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-center">
+                        <a href="{% url 'transfer_list' %}" class="btn btn-outline-primary">
+                            View All My Transfers
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-arrow-left-right display-1 text-muted"></i>
+                        <h4 class="mt-3">No transfers yet</h4>
+                        <p class="text-muted">Start by declaring your first transfer.</p>
+                        <a href="{% url 'create_transfer' %}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Declare Transfer
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-cash-coin"></i> Recent Commission Earnings
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if recent_commissions %}
+                    {% for commission in recent_commissions %}
+                    <div class="d-flex justify-content-between align-items-center py-2 {% if not forloop.last %}border-bottom{% endif %}">
+                        <div>
+                            <div class="fw-bold">Transfer #{{ commission.transfer.id }}</div>
+                            <small class="text-muted">{{ commission.created_at|date:"M d, Y" }}</small>
+                        </div>
+                        <div class="text-end">
+                            <div class="text-success fw-bold">+{{ commission.declaring_agent_amount|floatformat:2 }} EUR</div>
+                            <small class="text-muted">{{ commission.config_used.commission_rate }}% rate</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-3">
+                        <i class="bi bi-cash-coin display-4 text-muted"></i>
+                        <p class="text-muted mt-2 mb-0">No commissions yet</p>
+                        <small class="text-muted">Complete transfers to earn commissions</small>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-clock-history"></i> My Recent Activity
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if my_activities %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Action</th>
+                                    <th>Time</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for activity in my_activities %}
+                                <tr>
+                                    <td>{{ activity.action|title }}</td>
+                                    <td class="text-muted">{{ activity.timestamp|timesince }} ago</td>
+                                    <td class="text-muted small">
+                                        {% if activity.details %}
+                                            {{ activity.details|truncatechars:50 }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No recent activity</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

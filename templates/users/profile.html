@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+
+{% block title %}Profile - Money Transfer App{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="bi bi-person"></i> My Profile
+        </h1>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Personal Information</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Username</label>
+                                <input type="text" class="form-control" value="{{ user.username }}" readonly>
+                                <small class="text-muted">Username cannot be changed</small>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">User Type</label>
+                                <input type="text" class="form-control" value="{{ user.get_user_type_display }}" readonly>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">First Name</label>
+                                {% if user.is_manager or user.is_superuser %}
+                                    <input type="text" class="form-control" name="first_name" value="{{ user.first_name }}" placeholder="Enter your first name">
+                                {% else %}
+                                    <input type="text" class="form-control" value="{{ user.first_name }}" readonly>
+                                    <small class="text-muted">Contact a manager to change this</small>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Last Name</label>
+                                {% if user.is_manager or user.is_superuser %}
+                                    <input type="text" class="form-control" name="last_name" value="{{ user.last_name }}" placeholder="Enter your last name">
+                                {% else %}
+                                    <input type="text" class="form-control" value="{{ user.last_name }}" readonly>
+                                    <small class="text-muted">Contact a manager to change this</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        {% if user.is_manager or user.is_superuser %}
+                            <input type="email" class="form-control" name="email" value="{{ user.email }}" placeholder="Enter your email">
+                        {% else %}
+                            <input type="email" class="form-control" value="{{ user.email }}" readonly>
+                            <small class="text-muted">Contact a manager to change this</small>
+                        {% endif %}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="phone" class="form-label">Phone</label>
+                                <input type="text" class="form-control" name="phone" id="phone"
+                                       value="{{ user.phone }}" placeholder="Enter your phone number">
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="location" class="form-label">Location</label>
+                                <input type="text" class="form-control" name="location" id="location"
+                                       value="{{ user.location }}" placeholder="Enter your city/region">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Member Since</label>
+                                <input type="text" class="form-control" value="{{ user.created_at|date:'F d, Y' }}" readonly>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Account Status</label>
+                                <input type="text" class="form-control" value="{% if user.is_active_user %}Active{% else %}Inactive{% endif %}" readonly>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg"></i> Update Profile
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

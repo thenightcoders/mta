@@ -1,0 +1,213 @@
+{% extends 'base.html' %}
+
+{% block title %}Exchange Rates - Money Transfer App{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="bi bi-currency-exchange"></i> Exchange Rates
+            </h1>
+            <div>
+                <a href="{% url 'stock_list' %}" class="btn btn-outline-secondary me-2">
+                    <i class="bi bi-arrow-left"></i> Back to Stocks
+                </a>
+                <a href="{% url 'create_exchange_rate' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Add Rate
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Latest Rates Summary -->
+{% if latest_rates %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-graph-up"></i> Current Exchange Rates
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for rate in latest_rates %}
+                    <div class="col-md-4 mb-3">
+                        <div class="card border">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">
+                                    <span class="badge bg-primary">{{ rate.from_currency }}</span>
+                                    <i class="bi bi-arrow-right mx-2"></i>
+                                    <span class="badge bg-success">{{ rate.to_currency }}</span>
+                                </h6>
+                                <h3 class="text-primary">{{ rate.rate|floatformat:4 }}</h3>
+                                <small class="text-muted">Updated {{ rate.created_at|timesince }} ago</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Exchange Rate History -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-clock-history"></i> Exchange Rate History
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if rates %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>From</th>
+                                    <th>To</th>
+                                    <th>Rate</th>
+                                    <th>Defined By</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for rate in rates %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-primary">{{ rate.from_currency }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success">{{ rate.to_currency }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold">{{ rate.rate|floatformat:4 }}</span>
+                                    </td>
+                                    <td>
+                                        {% if rate.defined_by %}
+                                            <span class="badge bg-info">{{ rate.defined_by.get_user_type_display }}</span>
+                                            {{ rate.defined_by.get_full_name|default:rate.defined_by.username }}
+                                        {% else %}
+                                            <span class="text-muted">System</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-muted">{{ rate.created_at|date:"M d, Y H:i" }}</td>
+                                    <td>
+                                        <a href="/admin/stock/exchangerate/{{ rate.id }}/change/" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-currency-exchange display-1 text-muted"></i>
+                        <h4 class="mt-3">No exchange rates defined</h4>
+                        <p class="text-muted">Create your first exchange rate to enable currency conversions.</p>
+                        <a href="{% url 'create_exchange_rate' %}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Add Exchange Rate
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Currency Converter -->
+{% if latest_rates %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-calculator"></i> Currency Converter
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label class="form-label">Amount</label>
+                        <input type="number" class="form-control" id="convertAmount" value="100" min="0" step="0.01">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">From</label>
+                        <select class="form-select" id="fromCurrency">
+                            <option value="EUR">EUR</option>
+                            <option value="BIF">BIF</option>
+                            <option value="USD">USD</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">To</label>
+                        <select class="form-select" id="toCurrency">
+                            <option value="BIF">BIF</option>
+                            <option value="EUR">EUR</option>
+                            <option value="USD">USD</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Result</label>
+                        <div class="p-2 bg-light rounded fw-bold" id="conversionResult">
+                            —
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if latest_rates %}
+<script>
+const exchangeRates = {
+    {% for rate in latest_rates %}
+    "{{ rate.from_currency }}_{{ rate.to_currency }}": {{ rate.rate }},
+    {% endfor %}
+};
+
+function convertCurrency() {
+    const amount = parseFloat(document.getElementById('convertAmount').value) || 0;
+    const fromCurrency = document.getElementById('fromCurrency').value;
+    const toCurrency = document.getElementById('toCurrency').value;
+    const resultDiv = document.getElementById('conversionResult');
+
+    if (fromCurrency === toCurrency) {
+        resultDiv.textContent = `${amount.toFixed(2)} ${toCurrency}`;
+        return;
+    }
+
+    const rateKey = `${fromCurrency}_${toCurrency}`;
+    const rate = exchangeRates[rateKey];
+
+    if (rate) {
+        const result = amount * rate;
+        resultDiv.textContent = `${result.toFixed(2)} ${toCurrency}`;
+    } else {
+        resultDiv.textContent = 'Rate not available';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('convertAmount').addEventListener('input', convertCurrency);
+    document.getElementById('fromCurrency').addEventListener('change', convertCurrency);
+    document.getElementById('toCurrency').addEventListener('change', convertCurrency);
+
+    convertCurrency(); // Initial conversion
+});
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,255 @@
+from django.db import models
+from django.core.exceptions import ValidationError
+from django.db.models import Q
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+CURRENCY_CHOICES = [
+    ('EUR', 'Euro'),
+    ('BIF', 'Franc Burundais'),
+    ('USD', 'Dollars'),
+]
+
+WITHDRAWAL_METHOD = [
+    ('CASH', 'Cash'),
+    ('LUMICASH', 'Lumicash'),
+    ('ECOCASH', 'Ecocash'),
+]
+
+TRANSFER_STATUS = [
+    ('PENDING', 'En attente'),
+    ('VALIDATED', 'Validé'),
+    ('COMPLETED', 'Complété'),
+    ('CANCELED', 'Annulé'),
+]
+
+
+class Transfer(models.Model):
+    """
+    Core transfer model representing money transfers from France/Belgium to Burundi
+    """
+    beneficiary_name = models.CharField(max_length=100, verbose_name="Nom du bénéficiaire")
+    beneficiary_phone = models.CharField(max_length=20, verbose_name="Téléphone du bénéficiaire")
+    method = models.CharField(max_length=50, choices=WITHDRAWAL_METHOD, verbose_name="Méthode de retrait")
+    agent = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='transfers_made', null=True,
+                              verbose_name="Agent")
+    amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Montant")
+    sent_currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, verbose_name="Devise envoyée")
+    received_currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, verbose_name="Devise reçue")
+    comment = models.TextField(blank=True, null=True, verbose_name="Commentaire")
+    status = models.CharField(max_length=10, choices=TRANSFER_STATUS, default='PENDING', verbose_name="Statut")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Créé le")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Modifié le")
+
+    # Validation fields
+    validated_by = models.ForeignKey(
+            User,
+            null=True,
+            blank=True,
+            on_delete=models.SET_NULL,
+            related_name='validated_transfers',
+            verbose_name="Validé par"
+    )
+    validated_at = models.DateTimeField(null=True, blank=True, verbose_name="Validé le")
+    validation_comment = models.TextField(blank=True, null=True, verbose_name="Commentaire de validation")
+
+    # Execution fields
+    executed_by = models.ForeignKey(
+            User,
+            null=True,
+            blank=True,
+            on_delete=models.SET_NULL,
+            related_name='executed_transfers',
+            verbose_name="Exécuté par"
+    )
+    executed_at = models.DateTimeField(null=True, blank=True, verbose_name="Exécuté le")
+    execution_comment = models.TextField(blank=True, null=True, verbose_name="Commentaire d'exécution")
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['status', '-created_at']),
+            models.Index(fields=['agent', '-created_at']),
+            models.Index(fields=['validated_by', '-created_at']),
+        ]
+        verbose_name = "Transfer"
+        verbose_name_plural = "Transfers"
+
+    def clean(self):
+        """Validation rules for transfers"""
+        if self.amount <= 0:
+            raise ValidationError("Le montant doit être positif.")
+
+        # Business rule validations
+        if self.beneficiary_phone and not self.beneficiary_phone.startswith('+'):
+            if not self.beneficiary_phone.startswith('257'):  # Burundi country code
+                raise ValidationError("Le numéro de téléphone doit commencer par +257 ou 257")
+
+    def can_be_validated_by(self, user):
+        """Check if user can validate this transfer"""
+        return (user.is_manager() or user.is_superuser) and self.status == 'PENDING'
+
+    def can_be_executed_by(self, user):
+        """Check if user can execute this transfer"""
+        return (user.is_manager() or user.is_superuser) and self.status == 'VALIDATED'
+
+    def get_commission_rate(self):
+        """Get applicable commission rate for this transfer"""
+        if self.status == 'PENDING':
+            return None
+
+        commission = getattr(self, 'commission', None)
+        if commission and commission.config_used:
+            return commission.config_used.commission_rate
+        return None
+
+    def get_commission_amount(self):
+        """Get total commission amount for this transfer"""
+        commission = getattr(self, 'commission', None)
+        if commission:
+            return commission.total_commission
+        return None
+
+    def __str__(self):
+        return f"#{self.id} - {self.beneficiary_name} - {self.amount} {self.sent_currency} ({self.get_status_display()})"
+
+
+class CommissionConfig(models.Model):
+    """
+    Commission configuration by managers for different amount ranges
+    """
+    manager = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Manager")
+    min_amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Montant minimum")
+    max_amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Montant maximum")
+    commission_rate = models.DecimalField(max_digits=5, decimal_places=2,
+                                          verbose_name="Taux de commission (%)")  # % on total
+    agent_share = models.DecimalField(max_digits=5, decimal_places=2,
+                                      verbose_name="Part agent (%)")  # % of the commission
+    currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, verbose_name="Devise")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Créé le")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Modifié le")
+    active = models.BooleanField(default=True, verbose_name="Actif")
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                    check=Q(agent_share__gte=0) & Q(agent_share__lte=100),
+                    name='valid_agent_share'
+            ),
+            models.CheckConstraint(
+                    check=Q(commission_rate__gte=0) & Q(commission_rate__lte=100),
+                    name='valid_commission_rate'
+            ),
+            models.CheckConstraint(
+                    check=Q(min_amount__lte=models.F('max_amount')),
+                    name='valid_amount_range'
+            ),
+            models.UniqueConstraint(
+                    fields=['manager', 'min_amount', 'max_amount', 'currency'],
+                    condition=Q(active=True),
+                    name='unique_active_config_range'
+            )
+        ]
+        ordering = ['currency', 'min_amount']
+        verbose_name = "Configuration de Commission"
+        verbose_name_plural = "Configurations de Commission"
+
+    def clean(self):
+        """Validation rules for commission config"""
+        if self.agent_share < 0 or self.agent_share > 100:
+            raise ValidationError("Part agent doit être entre 0 et 100%.")
+
+        if self.commission_rate < 0 or self.commission_rate > 100:
+            raise ValidationError("Commission totale doit être entre 0 et 100%.")
+
+        if self.min_amount > self.max_amount:
+            raise ValidationError("Le montant minimum ne peut pas être supérieur au maximum.")
+
+        if self.min_amount < 0:
+            raise ValidationError("Le montant minimum ne peut pas être négatif.")
+
+    @property
+    def manager_share(self):
+        """Calculate manager share percentage"""
+        return 100 - self.agent_share
+
+    def applies_to_transfer(self, transfer):
+        """Check if this config applies to a transfer"""
+        return (
+                self.active and
+                self.currency == transfer.sent_currency and
+                self.min_amount <= transfer.amount <= self.max_amount
+        )
+
+    def __str__(self):
+        return f"{self.commission_rate}% pour [{self.min_amount}-{self.max_amount}] {self.currency} (Agent: {self.agent_share}%)"
+
+
+class CommissionDistribution(models.Model):
+    """
+    Tracks commission distribution for each transfer
+    """
+    transfer = models.OneToOneField(Transfer, on_delete=models.CASCADE, related_name='commission',
+                                    verbose_name="Transfer")
+    agent = models.ForeignKey(User, on_delete=models.CASCADE, related_name='commission_earnings', verbose_name="Agent")
+    config_used = models.ForeignKey(CommissionConfig, on_delete=models.SET_NULL, null=True,
+                                    verbose_name="Configuration utilisée")
+
+    total_commission = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Commission totale")
+    declaring_agent_amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Montant agent")
+    manager_amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Montant manager")
+
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Créé le")
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['agent', '-created_at']),
+            models.Index(fields=['-created_at']),
+            models.Index(fields=['transfer']),
+        ]
+        verbose_name = "Distribution de Commission"
+        verbose_name_plural = "Distributions de Commission"
+
+    def clean(self):
+        """Validation for commission distribution"""
+        if self.total_commission < 0:
+            raise ValidationError("La commission totale ne peut pas être négative.")
+
+        if self.declaring_agent_amount < 0:
+            raise ValidationError("Le montant agent ne peut pas être négatif.")
+
+        if self.manager_amount < 0:
+            raise ValidationError("Le montant manager ne peut pas être négatif.")
+
+        # Verify that agent + manager amounts equal total (within rounding tolerance)
+        calculated_total = self.declaring_agent_amount + self.manager_amount
+        if abs(calculated_total - self.total_commission) > 0.01:
+            raise ValidationError(
+                    f"La somme des parts ({calculated_total}) ne correspond pas au total ({self.total_commission})."
+            )
+
+    @classmethod
+    def calculate_commission(cls, transfer, commission_config):
+        """Calculate commission distribution for a transfer"""
+        if not commission_config:
+            return None
+
+        total_commission = (transfer.amount * commission_config.commission_rate) / 100
+        agent_amount = (total_commission * commission_config.agent_share) / 100
+        manager_amount = total_commission - agent_amount
+
+        return {
+            'total_commission': round(total_commission, 2),
+            'declaring_agent_amount': round(agent_amount, 2),
+            'manager_amount': round(manager_amount, 2),
+        }
+
+    def save(self, *args, **kwargs):
+        """Override save to run validation"""
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Commission Transfer #{self.transfer.id} - Agent: {self.declaring_agent_amount}, Manager: {self.manager_amount}"

@@ -1,0 +1,382 @@
+{% extends 'base.html' %}
+
+{% block title %}Commission Configurations - Money Transfer App{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="bi bi-percent"></i> Commission Configurations
+            </h1>
+            <a href="{% url 'create_commission_config' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> New Configuration
+            </a>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                {% if configs %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Currency</th>
+                                    <th>Amount Range</th>
+                                    <th>Commission Rate</th>
+                                    <th>Agent Share</th>
+                                    <th>Manager Share</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for config in configs %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-primary">{{ config.currency }}</span>
+                                    </td>
+                                    <td>
+                                        {{ config.min_amount|floatformat:2 }} - {{ config.max_amount|floatformat:2 }} {{ config.currency }}
+                                    </td>
+                                    <td>
+                                        <strong>{{ config.commission_rate|floatformat:2 }}%</strong>
+                                    </td>
+                                    <td>
+                                        <span class="text-success">{{ config.agent_share|floatformat:2 }}%</span>
+                                    </td>
+                                    <td>
+                                        <span class="text-info">{{ config.manager_share|floatformat:2 }}%</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% if config.active %}success{% else %}secondary{% endif %}">
+                                            {% if config.active %}Active{% else %}Inactive{% endif %}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary me-1" onclick="editConfig({{ config.id }}, '{{ config.currency }}', '{{ config.min_amount }}', '{{ config.max_amount }}', '{{ config.commission_rate }}', '{{ config.agent_share }}', {{ config.active|yesno:'true,false' }})">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-{% if config.active %}danger{% else %}success{% endif %}" onclick="toggleConfig({{ config.id }}, {{ config.active|yesno:'true,false' }})">
+                                            {% if config.active %}Disable{% else %}Enable{% endif %}
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-percent display-1 text-muted"></i>
+                        <h4 class="mt-3">No commission configurations</h4>
+                        <p class="text-muted">Create your first commission configuration.</p>
+                        <a href="{% url 'create_commission_config' %}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Create Configuration
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Commission Calculator -->
+{% if configs %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-calculator"></i> Commission Calculator
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label class="form-label">Transfer Amount</label>
+                        <input type="number" class="form-control" id="calcAmount" value="100" min="0" step="0.01" onchange="calculateCommission()">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Currency</label>
+                        <select class="form-select" id="calcCurrency" onchange="calculateCommission()">
+                            <option value="EUR">EUR</option>
+                            <option value="BIF">BIF</option>
+                            <option value="USD">USD</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Commission Breakdown</label>
+                        <div id="commissionResult" class="p-3 bg-light rounded">
+                            <em class="text-muted">Enter an amount to see commission calculation</em>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Commission Explanation -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <h6 class="mb-2"><i class="bi bi-info-circle"></i> How Commission Works</h6>
+            <p class="mb-1"><strong>Commission Rate:</strong> Percentage taken from transfer amount (e.g. 3% of 100 EUR = 3 EUR total commission)</p>
+            <p class="mb-1"><strong>Agent Share:</strong> Percentage of commission going to agent (e.g. 40% of 3 EUR = 1.20 EUR to agent)</p>
+            <p class="mb-0"><strong>Manager Share:</strong> Remaining commission goes to manager (e.g. 60% of 3 EUR = 1.80 EUR to manager)</p>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Commission Configuration</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editForm">
+                    <input type="hidden" id="editConfigId">
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Currency</label>
+                                <input type="text" class="form-control" id="editCurrency" readonly>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="editActive">
+                                    <label class="form-check-label" for="editActive">Active</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Min Amount</label>
+                                <input type="number" class="form-control" id="editMinAmount" step="0.01">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Max Amount</label>
+                                <input type="number" class="form-control" id="editMaxAmount" step="0.01">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Commission Rate (%)</label>
+                                <input type="number" class="form-control" id="editCommissionRate" step="0.01">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Agent Share (%)</label>
+                                <input type="number" class="form-control" id="editAgentShare" step="0.01">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveConfig()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleConfig(configId, isActive) {
+    console.log('toggleConfig called:', configId, isActive);
+
+    const action = isActive ? 'disable' : 'enable';
+
+    if (confirm(`Are you sure you want to ${action} this commission configuration?`)) {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        fetch(`/transfers/commissions/${configId}/toggle/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => {
+            console.log('Response:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Data:', data);
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error: ' + error);
+        });
+    }
+}
+
+function editConfig(configId, currency, minAmount, maxAmount, commissionRate, agentShare, active) {
+    console.log('editConfig called with:');
+    console.log('configId:', configId);
+    console.log('currency:', currency);
+    console.log('minAmount:', minAmount);
+    console.log('maxAmount:', maxAmount);
+    console.log('commissionRate:', commissionRate);
+    console.log('agentShare:', agentShare);
+    console.log('active:', active);
+
+    // Fill the modal
+    document.getElementById('editConfigId').value = configId;
+    document.getElementById('editCurrency').value = currency;
+    document.getElementById('editMinAmount').value = parseFloat(minAmount);
+    document.getElementById('editMaxAmount').value = parseFloat(maxAmount);
+    document.getElementById('editCommissionRate').value = parseFloat(commissionRate);
+    document.getElementById('editAgentShare').value = parseFloat(agentShare);
+    document.getElementById('editActive').checked = active;
+
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('editModal'));
+    modal.show();
+}
+
+function saveConfig() {
+    console.log('saveConfig called');
+
+    const configId = document.getElementById('editConfigId').value;
+    const formData = {
+        min_amount: document.getElementById('editMinAmount').value,
+        max_amount: document.getElementById('editMaxAmount').value,
+        commission_rate: document.getElementById('editCommissionRate').value,
+        agent_share: document.getElementById('editAgentShare').value,
+        active: document.getElementById('editActive').checked
+    };
+
+    console.log('Saving config:', configId, formData);
+
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    fetch(`/transfers/commissions/${configId}/update/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => {
+        console.log('Update response:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Update data:', data);
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Update error:', error);
+        alert('Error: ' + error);
+    });
+}
+
+{% if configs %}
+// Commission calculator - simple and bulletproof
+const commissionConfigs = [
+    {% for config in configs %}
+    {
+        currency: '{{ config.currency }}',
+        minAmount: parseFloat('{{ config.min_amount }}'.replace(',', '.')),
+        maxAmount: parseFloat('{{ config.max_amount }}'.replace(',', '.')),
+        commissionRate: parseFloat('{{ config.commission_rate }}'.replace(',', '.')),
+        agentShare: parseFloat('{{ config.agent_share }}'.replace(',', '.')),
+        active: {{ config.active|yesno:'true,false' }}
+    },
+    {% endfor %}
+];
+
+function calculateCommission() {
+    console.log('calculateCommission called');
+
+    const amount = parseFloat(document.getElementById('calcAmount').value) || 0;
+    const currency = document.getElementById('calcCurrency').value;
+    const resultDiv = document.getElementById('commissionResult');
+
+    console.log('Amount:', amount, 'Currency:', currency);
+
+    if (amount <= 0) {
+        resultDiv.innerHTML = '<em class="text-muted">Enter an amount to see commission calculation</em>';
+        return;
+    }
+
+    // Find applicable config
+    const config = commissionConfigs.find(function(c) {
+        return c.active &&
+               c.currency === currency &&
+               amount >= c.minAmount &&
+               amount <= c.maxAmount;
+    });
+
+    console.log('Found config:', config);
+
+    if (config) {
+        const totalCommission = (amount * config.commissionRate) / 100;
+        const agentAmount = (totalCommission * config.agentShare) / 100;
+        const managerAmount = totalCommission - agentAmount;
+
+        console.log('Total:', totalCommission, 'Agent:', agentAmount, 'Manager:', managerAmount);
+
+        resultDiv.innerHTML =
+            '<div class="row">' +
+                '<div class="col-6 col-md-3">' +
+                    '<small class="text-muted">Total Commission:</small>' +
+                    '<div class="fw-bold">' + totalCommission.toFixed(2) + ' ' + currency + '</div>' +
+                '</div>' +
+                '<div class="col-6 col-md-3">' +
+                    '<small class="text-muted">Agent Gets:</small>' +
+                    '<div class="fw-bold text-success">' + agentAmount.toFixed(2) + ' ' + currency + '</div>' +
+                '</div>' +
+                '<div class="col-6 col-md-3">' +
+                    '<small class="text-muted">Manager Gets:</small>' +
+                    '<div class="fw-bold text-info">' + managerAmount.toFixed(2) + ' ' + currency + '</div>' +
+                '</div>' +
+                '<div class="col-6 col-md-3">' +
+                    '<small class="text-muted">Rate Used:</small>' +
+                    '<div class="fw-bold">' + config.commissionRate + '%</div>' +
+                '</div>' +
+            '</div>';
+    } else {
+        resultDiv.innerHTML = '<div class="text-warning">No commission configuration found for ' + amount + ' ' + currency + '</div>';
+    }
+}
+
+// Calculate on page load
+calculateCommission();
+{% endif %}
+</script>
+{% endblock %}
