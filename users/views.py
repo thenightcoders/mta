@@ -39,7 +39,6 @@ def login_view(request):
             user = authenticate(request, username=username, password=password)
             if user and user.is_active_user:
                 login(request, user)
-                log_user_activity(user, 'login', request=request)
 
                 # Redirect based on user type
                 if user.is_superuser or user.is_manager():
@@ -57,7 +56,6 @@ def login_view(request):
 def logout_view(request):
     """Handle user logout"""
     if request.user.is_authenticated:
-        log_user_activity(request.user, 'logout', request=request)
         logout(request)
         messages.info(request, 'You have been logged out successfully')
 
@@ -218,7 +216,12 @@ def create_user(request):
                 return redirect('user_list')
 
             except ValidationError as e:
-                messages.error(request, str(e))
+                for field, errors in e.message_dict.items():
+                    if field == '__all__':
+                        form.add_error(None, errors)
+                    else:
+                        for error in errors:
+                            form.add_error(field, error)
     else:
         form = UserCreationForm()
 

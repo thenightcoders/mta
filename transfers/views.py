@@ -40,19 +40,31 @@ def create_transfer(request):
     if request.method == 'POST':
         form = TransferForm(request.POST)
         if form.is_valid():
-            transfer = form.save(commit=False)
-            transfer.agent = request.user
-            transfer.save()
+            try:
 
-            log_user_activity(
+                transfer = form.save(commit=False)
+                transfer.agent = request.user
+                transfer.save()
+
+                log_user_activity(
+                        request.user,
+                        'transfer_created',
+                        {'transfer_id': transfer.id, 'beneficiary': transfer.beneficiary_name},
+                        request
+                )
+
+                messages.success(request, f'Transfer #{transfer.id} created successfully')
+                return redirect('transfer_detail', transfer_id=transfer.id)
+            except ValidationError as e:
+                messages.error(request, str(e))
+                log_user_activity(
                     request.user,
-                    'transfer_created',
-                    {'transfer_id': transfer.id, 'beneficiary': transfer.beneficiary_name},
+                    'Transfer_creation_failed',
+                    {'error': str(e), 'form_data': form.cleaned_data},
                     request
-            )
-
-            messages.success(request, f'Transfer #{transfer.id} created successfully')
-            return redirect('transfer_detail', transfer_id=transfer.id)
+                )
+        else:
+            print("Form errors:", form.errors)
     else:
         form = TransferForm()
 

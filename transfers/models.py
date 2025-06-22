@@ -83,8 +83,7 @@ class Transfer(models.Model):
 
         # Business rule validations
         if self.beneficiary_phone and not self.beneficiary_phone.startswith('+'):
-            if not self.beneficiary_phone.startswith('257'):  # Burundi country code
-                raise ValidationError("Le numéro de téléphone doit commencer par +257 ou 257")
+                raise ValidationError("Le numéro de téléphone doit commencer par +(indicatif telephonique international: 257, 32, 33, etc.")
 
     def can_be_validated_by(self, user):
         """Check if user can validate this transfer"""

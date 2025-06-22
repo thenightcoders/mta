@@ -161,7 +161,9 @@ def log_model_deletes(sender, instance, **kwargs):
 
     if not get_current_user():
         return
-
+    # Skip Sessions
+    if sender._meta.label == 'sessions.Session':
+        return
     model_name = sender._meta.label.lower().replace('.', '_')
     action = f'{model_name}_deleted'
 

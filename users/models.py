@@ -25,8 +25,8 @@ class User(AbstractUser):
         """Validation rules for user creation"""
         super().clean()
 
-        # Only managers can create users
-        if self.created_by and self.created_by.user_type != 'manager':
+        # Only managers can create users or superuser
+        if self.created_by and not (self.created_by.user_type == 'manager' or self.created_by.is_superuser):
             raise ValidationError("Only managers can create user accounts")
 
     def is_manager(self):

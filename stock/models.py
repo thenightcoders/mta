@@ -55,7 +55,7 @@ class Stock(models.Model):
         base = self.location
         if self.name:
             base = self.name
-        return f"{base} - {self.amount} {self.currency}"
+        return f"{base} {self.currency}"
 
 
 class StockMovement(models.Model):

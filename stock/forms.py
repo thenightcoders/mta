@@ -196,3 +196,16 @@ class StockFilterForm(forms.Form):
                 'type': 'date'
             })
     )
+
+class MoneyDepositForm(forms.ModelForm):
+    class Meta:
+        model = StockMovement
+        fields = ['stock', 'amount', 'reason']
+        widgets = {
+            'reason': forms.Textarea(attrs={'rows': 2}),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if cleaned_data.get('amount') and cleaned_data['amount'] <= 0:
+            self.add_error('amount', "Le montant doit être supérieur à zéro.")

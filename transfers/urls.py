@@ -15,4 +15,5 @@ urlpatterns = [
     path('commissions/create/', views.create_commission_config, name='create_commission_config'),
     path('commissions/<int:config_id>/toggle/', views.toggle_commission_config, name='toggle_commission_config'),
     path('commissions/<int:config_id>/update/', views.update_commission_config, name='update_commission_config'),
+
 ]

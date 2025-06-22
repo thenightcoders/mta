@@ -10,7 +10,7 @@ from django.db.models import Sum, Q, Count
 from django.db import models
 from django.utils import timezone
 from .models import Stock, StockMovement, ExchangeRate
-from .forms import StockForm, StockMovementForm, ExchangeRateForm
+from .forms import StockForm, StockMovementForm, ExchangeRateForm, MoneyDepositForm
 from users.models import log_user_activity
 
 
@@ -192,6 +192,28 @@ def create_stock_movement(request, stock_id):
     }
 
     return render(request, 'stock/create_stock_movement.html', context)
+
+@login_required
+def money_deposit(request):                           # same logic as create_stock_movement, can be optimized
+    """ Declare Money deposit into a specified Stock """
+    if not (request.user.is_manager() or request.user.is_superuser):
+        return HttpResponseForbidden("Access denied")
+    if request.method == 'POST':
+        form = MoneyDepositForm(request.POST)
+        if form.is_valid():
+            deposit = form.save(commit=False)
+            deposit.type = 'IN'                 # it's a deposit
+            deposit.created_by = request.user
+            deposit.save()
+
+            messages.success(request, "Dépôt enregistré avec succès.")
+            return redirect('dashboard')
+        else:
+            messages.error(request, "Erreur dans le formulaire.")
+    else:
+        form = MoneyDepositForm()
+
+    return render(request, 'stock/deposit.html', {'form': form})
 
 
 @login_required

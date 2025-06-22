@@ -3,6 +3,16 @@
 {% block title %}Create User - Money Transfer App{% endblock %}
 
 {% block content %}
+
+
+{% if form.non_field_errors %}
+    <div class="d-inline-block bg-danger text-white small px-3 py-1 rounded">
+        {% for error in form.non_field_errors %}
+        <div>{{ error }}</div>
+        {% endfor %}
+    </div>
+{% endif %}
+
 <div class="row">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -20,7 +30,7 @@
     <div class="col-md-8">
         <div class="card">
             <div class="card-body">
-                <form method="post">
+                <form method="post" autocomplete="off">
                     {% csrf_token %}
 
                     <div class="row">
