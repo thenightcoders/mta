@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+
+  <h2 class="mb-3">📊 Tableau des Commissions</h2>
+
+  <form method="get" class="mb-4">
+    <label for="period" class="form-label">Afficher par période :</label>
+    <select name="period" id="period" onchange="this.form.submit()" class="form-select w-auto d-inline-block">
+      <option value="day" {% if period == 'day' %}selected{% endif %}>Jour</option>
+      <option value="week" {% if period == 'week' %}selected{% endif %}>Semaine</option>
+      <option value="month" {% if period == 'month' %}selected{% endif %}>Mois</option>
+      <option value="year" {% if period == 'year' %}selected{% endif %}>Année</option>
+    </select>
+  </form>
+
+  {% if is_manager %}
+    <h4 class="mt-4">🧮 Totaux globaux</h4>
+    <ul class="list-group mb-3">
+      {% for item in global_commissions %}
+        <li class="list-group-item d-flex justify-content-between">
+          <span>{{ item.period|date:"F Y" }}</span>
+          <span>
+            Agent : <strong>{{ item.total_agent }}</strong> —
+            Manager : <strong>{{ item.total_manager }}</strong>
+          </span>
+        </li>
+      {% endfor %}
+    </ul>
+
+    <h4>📌 Totaux par agent</h4>
+    <table class="table table-sm table-bordered">
+      <thead>
+        <tr>
+          <th>Agent</th><th>Total Agent</th><th>Total Manager</th><th>Total Brut</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for agent in per_agent_totals %}
+        <tr>
+          <td>{{ agent.agent__username }}</td>
+          <td>{{ agent.total }}</td>
+          <td>{{ agent.total_manager }}</td>
+          <td>{{ agent.total_commissions }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <h4 class="mb-3">Mes Commissions par {{ period_label }}</h4>
+    <ul class="list-group mb-4">
+      {% for item in commissions %}
+        <li class="list-group-item d-flex justify-content-between">
+          {{ item.period|date:"d m Y" }} :
+          <strong>{{ item.total }}</strong>
+        </li>
+      {% empty %}
+        <li class="list-group-item">Aucune commission.</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  <h4 class="mt-4">🔍 Détails des Commissions</h4>
+  <table class="table table-hover table-bordered">
+    <thead>
+      <tr>
+        {% if is_manager %}<th>Agent</th>{% endif %}
+        <th>Date</th>
+        <th>Tranfert</th>
+        <th>Montant du transfert</th>
+        <th>Commission</th>
+        <th>Manager</th>
+        {% comment %} <th>Config</th> {% endcomment %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in detailed_commissions %}
+      <tr>
+        {% if is_manager %}<td>{{ c.agent.username }}</td>{% endif %}
+        <td>{{ c.created_at|date:"d/m/Y H:i" }}</td>
+        <td><a href="{% url 'transfer_detail' transfer_id=c.transfer.id %}">voir le transfert</a></td>
+        <td>{{ c.transfer.amount }} {{ c.transfer.sent_currency }}</td>
+        <td>{{ c.declaring_agent_amount }}</td>
+        <td>{{ c.transfer.validated_by.username }}</td>
+        {% comment %} <td>
+          {% if c.config_used %}
+            <a href="{% url 'toggle_commission_config' config_id=c.config_used.id %}" target="_blank">#{{ c.config_used.id }}</a>
+          {% else %}
+            -
+          {% endif %}
+        </td> {% endcomment %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+</div>
+{% endblock %}

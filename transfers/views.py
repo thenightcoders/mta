@@ -8,7 +8,8 @@ from django.utils import timezone
 from .models import Transfer, CommissionConfig, CommissionDistribution, TRANSFER_STATUS
 from .forms import TransferForm, TransferValidationForm, CommissionConfigForm
 from users.models import log_user_activity
-
+from django.db.models.functions import TruncDay, TruncWeek, TruncMonth, TruncYear
+from django.db.models import Sum, F
 
 @login_required
 def transfer_list(request):
@@ -341,3 +342,94 @@ def create_commission_for_transfer(transfer):
                     config_used=config,
                     **commission_data
             )
+
+@login_required
+def commissions_overview(request):
+    """ list current user commission for a specified period, managers can view all user's commissions"""
+
+    user = request.user
+    period = request.GET.get('period', 'month')  # 'day', 'week', 'month', 'year'
+
+    trunc_map = {
+        'day': TruncDay,
+        'week': TruncWeek,
+        'month': TruncMonth,
+        'year': TruncYear,
+    }
+    trunc_function = trunc_map.get(period, TruncMonth)
+
+    period_label_map = {
+        'day': 'jour',
+        'week': 'semaine',
+        'month': 'mois',
+        'year': 'année'
+    }
+    period_label = period_label_map.get(period, 'mois')
+
+    
+    # agents only see their earnings
+    if not (user.is_manager() or user.is_superuser):
+        commissions = (
+            CommissionDistribution.objects
+            .filter(agent=user)
+            .annotate(period=trunc_function('created_at'))
+            .values('period')
+            .annotate(total=Sum('declaring_agent_amount'))
+            .order_by('period')
+        )
+        
+        detailed = (
+            CommissionDistribution.objects
+            .filter(agent=user)
+            .select_related('transfer__validated_by', 'config_used')
+            .order_by('-created_at')
+        )
+
+        context = {
+            'is_manager': False,
+            'period': period,
+            'commissions': commissions,
+            'detailed_commissions': detailed,
+            'period_label': period_label,  
+        }
+    else:
+    # Managers can visualize the commisions and all agent's earnings 
+        global_commissions = (
+            CommissionDistribution.objects
+            .annotate(period=trunc_function('created_at'))
+            .values('period')
+            .annotate(
+                total_agent=Sum('declaring_agent_amount'),
+                total_manager=Sum('manager_amount')
+            )
+            .order_by('-period')
+        )
+
+        per_agent_totals = (
+            CommissionDistribution.objects
+            .values('agent__id', 'agent__username')
+            .annotate(
+                total=Sum('declaring_agent_amount'),
+                total_commissions=Sum('total_commission'),
+                total_manager=Sum('manager_amount')
+            )
+            .order_by('total')
+        )
+        
+        detailed = (
+            CommissionDistribution.objects
+            .select_related('transfer__validated_by', 'config_used', 'agent')
+            .order_by('-created_at')
+        )
+
+        context = {
+            'is_manager': True,
+            'period': period,
+            'global_commissions': global_commissions,
+            'per_agent_totals': per_agent_totals,
+            'detailed_commissions': detailed,
+            'period_label': period_label,  
+        }
+
+        
+    return render(request, 'transfers/commissions.html', context)

@@ -16,4 +16,8 @@ urlpatterns = [
     path('commissions/<int:config_id>/toggle/', views.toggle_commission_config, name='toggle_commission_config'),
     path('commissions/<int:config_id>/update/', views.update_commission_config, name='update_commission_config'),
 
+    # earnings
+    path('commissions/overview/', views.commissions_overview, name='commissions_overview'),
+    path('commission/<int:commission_id>/detail/', views.commission_detail, name='commission_detail')
+
 ]
