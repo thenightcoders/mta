@@ -122,7 +122,7 @@ class CommissionConfig(models.Model):
     min_amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Montant minimum")
     max_amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Montant maximum")
     commission_rate = models.DecimalField(max_digits=5, decimal_places=2,
-                                          verbose_name="Taux de commission (%)")  # % on total
+                                          verbose_name="Taux de commission")  # commission for each transfer amount range
     agent_share = models.DecimalField(max_digits=5, decimal_places=2,
                                       verbose_name="Part agent (%)")  # % of the commission
     currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, verbose_name="Devise")
@@ -137,7 +137,7 @@ class CommissionConfig(models.Model):
                     name='valid_agent_share'
             ),
             models.CheckConstraint(
-                    check=Q(commission_rate__gte=0) & Q(commission_rate__lte=100),
+                    check=Q(commission_rate__gte=0),
                     name='valid_commission_rate'
             ),
             models.CheckConstraint(
@@ -159,8 +159,8 @@ class CommissionConfig(models.Model):
         if self.agent_share < 0 or self.agent_share > 100:
             raise ValidationError("Part agent doit être entre 0 et 100%.")
 
-        if self.commission_rate < 0 or self.commission_rate > 100:
-            raise ValidationError("Commission totale doit être entre 0 et 100%.")
+        if self.commission_rate < 0:
+            raise ValidationError("Commission totale doit être une somme positive")
 
         if self.min_amount > self.max_amount:
             raise ValidationError("Le montant minimum ne peut pas être supérieur au maximum.")
@@ -182,7 +182,7 @@ class CommissionConfig(models.Model):
         )
 
     def __str__(self):
-        return f"{self.commission_rate}% pour [{self.min_amount}-{self.max_amount}] {self.currency} (Agent: {self.agent_share}%)"
+        return f"{self.commission_rate} {self.currency} pour [{self.min_amount}-{self.max_amount}] {self.currency} (Agent: {self.agent_share}%)"
 
 
 class CommissionDistribution(models.Model):
@@ -235,8 +235,8 @@ class CommissionDistribution(models.Model):
         if not commission_config:
             return None
 
-        total_commission = (transfer.amount * commission_config.commission_rate) / 100
-        agent_amount = (total_commission * commission_config.agent_share) / 100
+        total_commission = commission_config.commission_rate
+        agent_amount = (total_commission * commission_config.agent_share) / 100 if not (transfer.agent.is_manager()) else 0
         manager_amount = total_commission - agent_amount
 
         return {

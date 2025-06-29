@@ -18,6 +18,6 @@ urlpatterns = [
 
     # earnings
     path('commissions/overview/', views.commissions_overview, name='commissions_overview'),
-    path('commission/<int:commission_id>/detail/', views.commission_detail, name='commission_detail')
+    # path('commission/<int:commission_id>/detail/', views.commission_detail, name='commission_detail')
 
 ]

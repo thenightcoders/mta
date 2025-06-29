@@ -184,7 +184,7 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="bi bi-percent"></i> Commission Overview
+                    <span class="me-1">💰</span> Commissions
                 </h5>
             </div>
             <div class="card-body">
@@ -192,17 +192,17 @@
                     <div class="row text-center mb-3">
                         <div class="col-12">
                             <h4 class="text-primary">{{ total_commissions.total_paid|floatformat:2 }} EUR</h4>
-                            <small class="text-muted">Total Commissions Paid</small>
+                            <small class="text-muted">Total Commissions received </small>
                         </div>
                     </div>
 
                     <div class="row text-center">
                         <div class="col-6">
-                            <div class="text-success fw-bold">{{ total_commissions.total_to_agents|floatformat:2 }}</div>
+                            <div class="text-success fw-bold">{{ total_commissions.total_to_agents|floatformat:2 }} €</div>
                             <small class="text-muted">To Agents</small>
                         </div>
                         <div class="col-6">
-                            <div class="text-info fw-bold">{{ total_commissions.total_to_managers|floatformat:2 }}</div>
+                            <div class="text-info fw-bold">{{ total_commissions.total_to_managers|floatformat:2 }} €</div>
                             <small class="text-muted">To Managers</small>
                         </div>
                     </div>

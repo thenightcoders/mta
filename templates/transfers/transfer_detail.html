@@ -122,14 +122,6 @@
                         <h5 class="text-info">{{ commission.manager_amount }} {{ transfer.sent_currency }}</h5>
                     </div>
                 </div>
-                {% if commission.config_used %}
-                <div class="mt-3">
-                    <small class="text-muted">
-                        Configuration: {{ commission.config_used.commission_rate }}% total commission,
-                        {{ commission.config_used.agent_share }}% to agent
-                    </small>
-                </div>
-                {% endif %}
             </div>
         </div>
         {% endif %}

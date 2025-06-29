@@ -61,35 +61,40 @@
                     </li>
 
                     <li class="nav-item dropdown">
-    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-        <i class="bi bi-bank"></i> Stock & Rates
-    </a>
-    <ul class="dropdown-menu">
-        <li><a class="dropdown-item" href="{% url 'stock_list' %}">
-            <i class="bi bi-bank"></i> Stock Management
-        </a></li>
-        <li><a class="dropdown-item" href="{% url 'stock_movements' %}">
-            <i class="bi bi-clock-history"></i> Stock Movements
-        </a></li>
-        <li><a class="dropdown-item" href="{% url 'exchange_rate_list' %}">
-            <i class="bi bi-currency-exchange"></i> Exchange Rates
-        </a></li>
-        <li><a class="dropdown-item" href="{% url 'commission_config_list' %}">
-            <i class="bi bi-percent"></i> Commission Configs
-        </a></li>
-        <li><hr class="dropdown-divider"></li>
-        <li><a class="dropdown-item" href="{% url 'create_stock' %}">
-            <i class="bi bi-plus-circle"></i> Create Stock
-        </a></li>
-        <li><a class="dropdown-item" href="{% url 'create_exchange_rate' %}">
-            <i class="bi bi-plus"></i> Add Exchange Rate
-        </a></li>
-        <li><a class="dropdown-item" href="{% url 'create_commission_config' %}">
-            <i class="bi bi-plus"></i> Add Commission Config
-        </a></li>
-    </ul>
-</li>
-                    {% endif %}
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-bank"></i> Stock & Rates
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'stock_list' %}">
+                                <i class="bi bi-bank"></i> Stock Management
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'stock_movements' %}">
+                                <i class="bi bi-clock-history"></i> Stock Movements
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'exchange_rate_list' %}">
+                                <i class="bi bi-currency-exchange"></i> Exchange Rates
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'commission_config_list' %}">
+                                <i class="bi bi-percent"></i> Commission Configs
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'create_stock' %}">
+                                <i class="bi bi-plus-circle"></i> Create Stock
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'create_exchange_rate' %}">
+                                <i class="bi bi-plus"></i> Add Exchange Rate
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'create_commission_config' %}">
+                                <i class="bi bi-plus"></i> Add Commission Config
+                            </a></li>
+                        </ul>
+                    </li>
+                {% endif %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'commissions_overview' %}">
+                           <i class="bi-cash-stack"></i> Commissions
+                        </a>
+                    </li>
                 </ul>
 
                 <ul class="navbar-nav">

@@ -15,24 +15,24 @@
   </form>
 
   {% if is_manager %}
-    <h4 class="mt-4">🧮 Totaux globaux</h4>
+    <h4 class="mt-4">🧮 Total </h4>
     <ul class="list-group mb-3">
       {% for item in global_commissions %}
         <li class="list-group-item d-flex justify-content-between">
           <span>{{ item.period|date:"F Y" }}</span>
           <span>
-            Agent : <strong>{{ item.total_agent }}</strong> —
-            Manager : <strong>{{ item.total_manager }}</strong>
+            Agent : <strong>{{ item.total_agent }} € </strong> </br>
+            Manager : <strong>{{ item.total_manager }} € </strong>
           </span>
         </li>
       {% endfor %}
     </ul>
 
-    <h4>📌 Totaux par agent</h4>
+    <h4>📌 Tous les commissions en € </h4>
     <table class="table table-sm table-bordered">
       <thead>
         <tr>
-          <th>Agent</th><th>Total Agent</th><th>Total Manager</th><th>Total Brut</th>
+          <th>Qui?</th><th>Son gain total</th><th>part des managers</th><th>Total Brut</th>
         </tr>
       </thead>
       <tbody>
@@ -52,10 +52,10 @@
       {% for item in commissions %}
         <li class="list-group-item d-flex justify-content-between">
           {{ item.period|date:"d m Y" }} :
-          <strong>{{ item.total }}</strong>
+          <strong>{{ item.total }} €</strong>
         </li>
       {% empty %}
-        <li class="list-group-item">Aucune commission.</li>
+        <li class="list-group-item">Aucune commission trouvée.</li>
       {% endfor %}
     </ul>
   {% endif %}

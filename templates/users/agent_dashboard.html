@@ -254,7 +254,7 @@
                                     <td class="text-muted">{{ activity.timestamp|timesince }} ago</td>
                                     <td class="text-muted small">
                                         {% if activity.details %}
-                                            {{ activity.details|truncatechars:50 }}
+                                            {{ activity.details|truncatechars:100 }}
                                         {% else %}
                                             -
                                         {% endif %}
