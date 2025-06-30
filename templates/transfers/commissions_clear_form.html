@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<form method="post" class="border p-3 rounded bg-light">
+    {% csrf_token %}
+  
+    <div class="mb-3">
+      <label>Agent (facultatif)</label>
+      <select name="agent" class="form-select">
+        <option value="">-- Tous les agents --</option>
+        {% for agent in agents %}
+          <option value="{{ agent.id }}">{{ agent.username }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  
+    <div class="mb-3">
+      <label>Période à cibler :</label>
+      <select name="mode" class="form-select" required>
+        <option value="">-- Choisir --</option>
+        <option value="day">Jour spécifique</option>
+        <option value="week">Semaine (via date)</option>
+        <option value="month">Mois</option>
+        <option value="year">Année</option>
+      </select>
+    </div>
+  
+    <div class="mb-3">
+      <label>Date (pour jour ou semaine)</label>
+      <input type="date" name="date" class="form-control">
+    </div>
+  
+    <div class="mb-3">
+      <label>Mois (format YYYY-MM)</label>
+      <input type="month" name="month" class="form-control">
+    </div>
+  
+    <div class="mb-3">
+      <label>Année</label>
+      <input type="number" name="year" class="form-control" placeholder="ex : 2024">
+    </div>
+  
+    <hr>
+  
+    <div class="mb-3">
+      <label>ID d'une commission spécifique</label>
+      <input type="number" name="commission_id" class="form-control" placeholder="ex : 154">
+    </div>
+  
+    <div class="d-grid">
+      <button type="submit" class="btn btn-danger"
+              onclick="return confirm('Confirmer la suppression ?')">
+        Supprimer
+      </button>
+    </div>
+  </form>
+  
+  {% endblock %}

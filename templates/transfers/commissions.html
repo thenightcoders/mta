@@ -4,6 +4,15 @@
 
   <h2 class="mb-3">📊 Tableau des Commissions</h2>
 
+  {% if is_manager %}
+    <div class="d-flex justify-content-end mb-3">
+      <a href="{% url 'clear_commissions' %}" class="btn btn-outline-danger btn-sm">
+        🧹 Gérer les suppressions de commissions
+      </a>
+    </div>
+  {% endif %}
+
+
   <form method="get" class="mb-4">
     <label for="period" class="form-label">Afficher par période :</label>
     <select name="period" id="period" onchange="this.form.submit()" class="form-select w-auto d-inline-block">
@@ -70,6 +79,7 @@
         <th>Montant du transfert</th>
         <th>Commission</th>
         <th>Manager</th>
+        <th>identifiant unique</th>
         {% comment %} <th>Config</th> {% endcomment %}
       </tr>
     </thead>
@@ -82,6 +92,7 @@
         <td>{{ c.transfer.amount }} {{ c.transfer.sent_currency }}</td>
         <td>{{ c.declaring_agent_amount }}</td>
         <td>{{ c.transfer.validated_by.username }}</td>
+        <td>{{ c.id }}</td>
         {% comment %} <td>
           {% if c.config_used %}
             <a href="{% url 'toggle_commission_config' config_id=c.config_used.id %}" target="_blank">#{{ c.config_used.id }}</a>

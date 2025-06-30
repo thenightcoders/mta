@@ -7,9 +7,10 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from .models import Transfer, CommissionConfig, CommissionDistribution, TRANSFER_STATUS
 from .forms import TransferForm, TransferValidationForm, CommissionConfigForm
-from users.models import log_user_activity
+from users.models import log_user_activity, User
 from django.db.models.functions import TruncDay, TruncWeek, TruncMonth, TruncYear
 from django.db.models import Sum, F
+import datetime
 
 @login_required
 def transfer_list(request):
@@ -433,3 +434,58 @@ def commissions_overview(request):
 
         
     return render(request, 'transfers/commissions.html', context)
+
+@login_required
+def clear_commissions(request):
+
+    """Update commission config - managers and superusers only"""
+    if not (request.user.is_manager() or request.user.is_superuser):
+        return JsonResponse({'error': 'Access denied'}, status=403)
+    
+    agents = User.objects.filter()
+
+    if request.method == 'POST':
+        mode = request.POST.get('mode')
+        agent_id = request.POST.get('agent')
+        date_str = request.POST.get('date')  # pour jour/semaine
+        month_str = request.POST.get('month')  # pour mois
+        year_str = request.POST.get('year')  # pour année
+        commission_id = request.POST.get('commission_id')
+
+        qs = CommissionDistribution.objects.all()
+
+        # Filtrer par agent
+        if agent_id:
+            qs = qs.filter(agent__id=agent_id)
+
+        # Supprimer par ID
+        if commission_id:
+            qs = qs.filter(id=commission_id)
+            count = qs.count()
+            qs.delete()
+            messages.success(request, f"{count} commission(s) supprimée(s) par ID.")
+            return redirect('commissions_overview')
+
+        # Supprimer selon le mode
+        if mode == 'day' and date_str:
+            date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+            qs = qs.filter(created_at__date=date)
+
+        elif mode == 'week' and date_str:
+            date = datetime.datetime.strptime(date_str, '%Y-%m-%d')
+            year, week, _ = date.isocalendar()
+            qs = qs.filter(created_at__iso_year=year, created_at__week=week)
+
+        elif mode == 'month' and month_str:
+            year, month = map(int, month_str.split('-'))
+            qs = qs.filter(created_at__year=year, created_at__month=month)
+
+        elif mode == 'year' and year_str:
+            qs = qs.filter(created_at__year=int(year_str))
+
+        count = qs.count()
+        qs.delete()
+        messages.success(request, f"{count} commission(s) supprimée(s).")
+        return redirect('commissions_overview')
+
+    return render(request, 'transfers/commissions_clear_form.html', {'agents': agents})
