@@ -52,7 +52,7 @@
       {% for item in commissions %}
         <li class="list-group-item d-flex justify-content-between">
           {{ item.period|date:"d m Y" }} :
-          <strong>{{ item.total }} €</strong>
+          <strong>{{ item.total }}</strong>
         </li>
       {% empty %}
         <li class="list-group-item">Aucune commission trouvée.</li>
