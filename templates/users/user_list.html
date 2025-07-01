@@ -1,16 +1,18 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}User Management - Money Transfer App{% endblock %}
+{% block title %}{% trans "Gestion des Utilisateurs - {{ site_name_formal }}" %}{% endblock %}
 
 {% block content %}
+{% csrf_token %}
 <div class="row">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>
-                <i class="bi bi-people"></i> User Management
+                <i class="bi bi-people"></i> {% trans "Gestion des Utilisateurs" %}
             </h1>
             <a href="{% url 'create_user' %}" class="btn btn-primary">
-                <i class="bi bi-person-plus"></i> Create User
+                <i class="bi bi-person-plus"></i> {% trans "Créer un Utilisateur" %}
             </a>
         </div>
     </div>
@@ -21,72 +23,91 @@
         <div class="card">
             <div class="card-body">
                 {% if users %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Username</th>
-                                    <th>Name</th>
-                                    <th>Type</th>
-                                    <th>Email</th>
-                                    <th>Phone</th>
-                                    <th>Location</th>
-                                    <th>Status</th>
-                                    <th>Created</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for user_obj in users %}
-                                <tr>
-                                    <td>
-                                        <strong>{{ user_obj.username }}</strong>
-                                        {% if user_obj == user %}
-                                            <span class="badge bg-warning text-dark ms-1">You</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ user_obj.get_full_name|default:"-" }}</td>
-                                    <td>
-                                        <span class="badge bg-{% if user_obj.is_manager %}success{% else %}primary{% endif %}">
-                                            {{ user_obj.get_user_type_display }}
-                                        </span>
-                                    </td>
-                                    <td>{{ user_obj.email|default:"-" }}</td>
-                                    <td>{{ user_obj.phone|default:"-" }}</td>
-                                    <td>{{ user_obj.location|default:"-" }}</td>
-                                    <td>
-                                        <span class="badge bg-{% if user_obj.is_active_user %}success{% else %}danger{% endif %}">
-                                            {% if user_obj.is_active_user %}Active{% else %}Inactive{% endif %}
-                                        </span>
-                                    </td>
-                                    <td class="text-muted">{{ user_obj.created_at|date:"M d, Y" }}</td>
-                                    <td>
-                                        <div class="btn-group btn-group-sm" role="group">
-                                            <a href="{% url 'update_user' user_obj.id %}" class="btn btn-outline-primary">
-                                                <i class="bi bi-pencil"></i>
-                                            </a>
-                                            {% if user_obj != user %}
-                                            <button type="button" class="btn btn-outline-{% if user_obj.is_active_user %}danger{% else %}success{% endif %}"
-                                                    onclick="toggleUserStatus({{ user_obj.id }}, '{{ user_obj.username }}')">
-                                                <i class="bi bi-{% if user_obj.is_active_user %}x-circle{% else %}check-circle{% endif %}"></i>
-                                            </button>
-                                            {% endif %}
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                        <tr>
+                            <th>{% trans "Nom d'Utilisateur" %}</th>
+                            <th>{% trans "Nom" %}</th>
+                            <th>{% trans "Type" %}</th>
+                            <th>{% trans "Email" %}</th>
+                            <th>{% trans "Téléphone" %}</th>
+                            <th>{% trans "Emplacement" %}</th>
+                            <th>{% trans "Statut" %}</th>
+                            <th>{% trans "Créé" %}</th>
+                            <th>{% trans "Actions" %}</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for user_obj in users %}
+                        <tr id="user-row-{{ user_obj.id }}">
+                            <td>
+                                <strong>{{ user_obj.username }}</strong>
+                                {% if user_obj == user %}
+                                <span class="badge bg-warning text-dark ms-1">{% trans "Vous" %}</span>
+                                {% endif %}
+                                {% if user_obj.is_superuser %}
+                                <span class="badge bg-danger ms-1">{% trans "SUPER" %}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ user_obj.get_full_name|default:"-" }}</td>
+                            <td>
+                                <span class="badge bg-{% if user_obj.is_manager %}success{% else %}primary{% endif %}">
+                                    {{ user_obj.get_user_type_display }}
+                                </span>
+                            </td>
+                            <td>{{ user_obj.email|default:"-" }}</td>
+                            <td>{{ user_obj.phone|default:"-" }}</td>
+                            <td>{{ user_obj.location|default:"-" }}</td>
+                            <td>
+                                <span class="badge bg-{% if user_obj.is_active_user %}success{% else %}danger{% endif %}"
+                                      id="status-badge-{{ user_obj.id }}">
+                                    {% if user_obj.is_active_user %}{% trans "Actif" %}{% else %}{% trans "Inactif" %}{% endif %}
+                                </span>
+                            </td>
+                            <td class="text-muted">{{ user_obj.created_at|date:"d M Y" }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <!-- Edit Button -->
+                                    <a href="{% url 'update_user' user_obj.id %}" class="btn btn-outline-primary"
+                                       title="{% trans "Modifier l'Utilisateur" %}">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+
+                                    {% if user_obj != user %}
+                                    <!-- Toggle Status Button -->
+                                    <button type="button"
+                                            class="btn btn-outline-{% if user_obj.is_active_user %}warning{% else %}success{% endif %}"
+                                            onclick="toggleUserStatus({{ user_obj.id }}, '{{ user_obj.username }}')"
+                                            title="{% if user_obj.is_active_user %}{% trans "Désactiver" %}{% else %}{% trans "Activer" %}{% endif %} {% trans "l'Utilisateur" %}"
+                                            id="toggle-btn-{{ user_obj.id }}">
+                                        <i class="bi bi-{% if user_obj.is_active_user %}pause-circle{% else %}play-circle{% endif %}"></i>
+                                    </button>
+
+                                    <!-- Delete Button -->
+                                    <button type="button"
+                                            class="btn btn-outline-danger"
+                                            onclick="deleteUser({{ user_obj.id }}, '{{ user_obj.username }}')"
+                                            title="{% trans "Supprimer l'Utilisateur" %}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
                 {% else %}
-                    <div class="text-center py-4">
-                        <i class="bi bi-people display-1 text-muted"></i>
-                        <h4 class="mt-3">No users found</h4>
-                        <p class="text-muted">Start by creating your first user account.</p>
-                        <a href="{% url 'create_user' %}" class="btn btn-primary">
-                            <i class="bi bi-person-plus"></i> Create User
-                        </a>
-                    </div>
+                <div class="text-center py-4">
+                    <i class="bi bi-people display-1 text-muted"></i>
+                    <h4 class="mt-3">{% trans "Aucun utilisateur trouvé" %}</h4>
+                    <p class="text-muted">{% trans "Commencez par créer votre premier compte utilisateur." %}</p>
+                    <a href="{% url 'create_user' %}" class="btn btn-primary">
+                        <i class="bi bi-person-plus"></i> {% trans "Créer un Utilisateur" %}
+                    </a>
+                </div>
                 {% endif %}
             </div>
         </div>
@@ -96,27 +117,120 @@
 
 {% block extra_js %}
 <script>
-function toggleUserStatus(userId, username) {
-    if (confirm(`Are you sure you want to toggle the status of user "${username}"?`)) {
-        fetch(`/users/${userId}/toggle-status/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                'Content-Type': 'application/json',
-            },
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Error: ' + (data.error || 'Unknown error'));
-            }
-        })
-        .catch(error => {
-            alert('Error: ' + error);
-        });
+    function getCSRFToken() {
+        return document.querySelector('[name=csrfmiddlewaretoken]').value;
     }
-}
+
+    function toggleUserStatus(userId, username) {
+        if (confirm(`{% trans "Êtes-vous sûr de vouloir modifier le statut de l'utilisateur" %} "${username}"?`)) {
+            console.log('Toggling status for user:', userId);
+
+            fetch(`/users/${userId}/toggle-status/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCSRFToken(),
+                    'Content-Type': 'application/json',
+                },
+            })
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Response data:', data);
+                    if (data.success) {
+                        // Update the badge and button without full page reload
+                        const badge = document.getElementById(`status-badge-${userId}`);
+                        const button = document.getElementById(`toggle-btn-${userId}`);
+
+                        if (data.new_status) {
+                            badge.className = 'badge bg-success';
+                            badge.textContent = '{% trans "Actif" %}';
+                            button.className = 'btn btn-outline-warning';
+                            button.title = '{% trans "Désactiver l'Utilisateur" %}';
+                            button.innerHTML = '<i class="bi bi-pause-circle"></i>';
+                        } else {
+                            badge.className = 'badge bg-danger';
+                            badge.textContent = '{% trans "Inactif" %}';
+                            button.className = 'btn btn-outline-success';
+                            button.title = '{% trans "Activer l'Utilisateur" %}';
+                            button.innerHTML = '<i class="bi bi-play-circle"></i>';
+                        }
+
+                        // Show success message
+                        showToast('success', `{% trans "Utilisateur" %} ${username} ${data.new_status ? '{% trans "activé" %}' : '{% trans "désactivé" %}'} {% trans "avec succès" %}`);
+                    } else {
+                        showToast('error', '{% trans "Erreur :" %} ' + (data.error || '{% trans "Erreur inconnue" %}'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('error', '{% trans "Erreur réseau :" %} ' + error);
+                });
+        }
+    }
+
+    function deleteUser(userId, username) {
+        if (confirm(`{% trans "Êtes-vous sûr de vouloir SUPPRIMER DÉFINITIVEMENT l'utilisateur" %} "${username}"?\n\n{% trans "Cette action ne peut pas être annulée !" %}`)) {
+            console.log('Deleting user:', userId);
+
+            fetch(`/users/${userId}/delete/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCSRFToken(),
+                    'Content-Type': 'application/json',
+                },
+            })
+                .then(response => {
+                    console.log('Delete response status:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Delete response data:', data);
+                    if (data.success) {
+                        // Remove the row from the table
+                        const row = document.getElementById(`user-row-${userId}`);
+                        row.style.transition = 'opacity 0.3s ease';
+                        row.style.opacity = '0.5';
+
+                        setTimeout(() => {
+                            row.remove();
+                            showToast('success', data.message);
+                        }, 300);
+                    } else {
+                        showToast('error', '{% trans "Erreur :" %} ' + (data.error || '{% trans "Erreur inconnue" %}'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('error', '{% trans "Erreur réseau :" %} ' + error);
+                });
+        }
+    }
+
+    function showToast(type, message) {
+        // Create a toast notification
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+        toast.style.top = '20px';
+        toast.style.right = '20px';
+        toast.style.zIndex = '9999';
+        toast.style.minWidth = '300px';
+
+        toast.innerHTML = `
+        <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-circle'}-fill me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+
+        document.body.appendChild(toast);
+
+        // Auto-remove after 3 seconds
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.remove();
+            }
+        }, 3000);
+    }
 </script>
 {% endblock %}

@@ -1,66 +1,69 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}Agent Dashboard - Money Transfer App{% endblock %}
+{% block title %}{% trans "Tableau de Bord Agent" %} - {% trans "Application de Transfert d'Argent" %}{% endblock %}
 
 {% block content %}
 <div class="row">
     <div class="col-12">
         <h1 class="mb-1">
-            <i class="bi bi-person-workspace"></i> Agent Dashboard
+            <i class="bi bi-person-workspace"></i> {% trans "Tableau de Bord Agent" %}
         </h1>
-        <small class="text-muted d-block mb-3">Welcome, {{ user.get_full_name|default:user.username }}</small>
+        <small class="text-muted d-block mb-3">{% trans "Bienvenue" %}, {{ user.get_full_name|default:user.username }}</small>
     </div>
 </div>
 
 <!-- Stats Cards -->
 <div class="row mb-4">
-    <div class="col-md-2">
+    <div class="col-md-3">
         <div class="card bg-primary text-white">
             <div class="card-body text-center">
                 <i class="bi bi-list-check display-4"></i>
-                <h5 class="mt-2">Total Transfers</h5>
+                <h5 class="mt-2">{% trans "Total Transferts" %}</h5>
                 <h2>{{ my_transfer_stats.total }}</h2>
             </div>
         </div>
     </div>
 
-    <div class="col-md-2">
+    <div class="col-md-3">
         <div class="card bg-warning text-white">
             <div class="card-body text-center">
                 <i class="bi bi-clock display-4"></i>
-                <h5 class="mt-2">Pending</h5>
+                <h5 class="mt-2">{% trans "En Attente" %}</h5>
                 <h2>{{ my_transfer_stats.pending }}</h2>
             </div>
         </div>
     </div>
 
-    <div class="col-md-2">
+    <div class="col-md-3">
         <div class="card bg-info text-white">
             <div class="card-body text-center">
                 <i class="bi bi-check-circle display-4"></i>
-                <h5 class="mt-2">Validated</h5>
+                <h5 class="mt-2">{% trans "Validés" %}</h5>
                 <h2>{{ my_transfer_stats.validated }}</h2>
             </div>
         </div>
     </div>
 
-    <div class="col-md-2">
+    <div class="col-md-3">
         <div class="card bg-success text-white">
             <div class="card-body text-center">
                 <i class="bi bi-check-all display-4"></i>
-                <h5 class="mt-2">Completed</h5>
+                <h5 class="mt-2">{% trans "Terminés" %}</h5>
                 <h2>{{ my_transfer_stats.completed }}</h2>
             </div>
         </div>
     </div>
+</div>
 
-    <div class="col-md-4">
-        <div class="card bg-gradient" style="background: linear-gradient(135deg, #28a745, #20c997);">
-            <div class="card-body text-white text-center">
-                <i class="bi bi-cash-coin display-4"></i>
-                <h5 class="mt-2">Total Commission Earned</h5>
-                <h2>{{ total_commission_earned|floatformat:2 }} EUR</h2>
-            </div>
+<!-- Commission Info -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="alert alert-success text-center">
+            <h4 class="mb-0">
+                <i class="bi bi-cash-coin me-2"></i>
+                {% trans "Total Commission Gagnée" %}: <strong>{{ total_commission_earned|floatformat:2 }} EUR</strong>
+            </h4>
         </div>
     </div>
 </div>
@@ -70,19 +73,19 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="bi bi-lightning"></i> Quick Actions
+                    <i class="bi bi-lightning"></i> {% trans "Actions Rapides" %}
                 </h5>
             </div>
             <div class="card-body">
                 <div class="d-grid gap-2">
                     <a href="{% url 'create_transfer' %}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Declare New Transfer
+                        <i class="bi bi-plus-circle"></i> {% trans "Déclarer Nouveau Transfert" %}
                     </a>
                     <a href="{% url 'transfer_list' %}" class="btn btn-outline-info">
-                        <i class="bi bi-list-check"></i> My Transfers
+                        <i class="bi bi-list-check"></i> {% trans "Mes Transferts" %}
                     </a>
                     <a href="{% url 'commissions_overview' %}" class="btn btn-outline-info">
-                        <i class="bi bi-list-check"></i> My Commission Earnings
+                        <i class="bi bi-list-check"></i> {% trans "Mes Gains de Commission" %}
                     </a>
                 </div>
             </div>
@@ -93,24 +96,24 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="bi bi-info-circle"></i> Your Info
+                    <i class="bi bi-info-circle"></i> {% trans "Vos Informations" %}
                 </h5>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">
-                        <p><strong>Name:</strong> {{ user.get_full_name|default:user.username }}</p>
-                        <p><strong>Username:</strong> {{ user.username }}</p>
-                        <p><strong>Email:</strong> {{ user.email|default:"Not set" }}</p>
+                        <p><strong>{% trans "Nom" %}:</strong> {{ user.get_full_name|default:user.username }}</p>
+                        <p><strong>{% trans "Nom d'utilisateur" %}:</strong> {{ user.username }}</p>
+                        <p><strong>{% trans "Email" %}:</strong> {{ user.email|default:"Non défini" }}</p>
                     </div>
                     <div class="col-md-6">
-                        <p><strong>Location:</strong> {{ user.location|default:"Not set" }}</p>
-                        <p><strong>Phone:</strong> {{ user.phone|default:"Not set" }}</p>
-                        <p><strong>Member since:</strong> {{ user.created_at|date:"M d, Y" }}</p>
+                        <p><strong>{% trans "Localisation" %}:</strong> {{ user.location|default:"Non définie" }}</p>
+                        <p><strong>{% trans "Téléphone" %}:</strong> {{ user.phone|default:"Non défini" }}</p>
+                        <p><strong>{% trans "Membre depuis" %}:</strong> {{ user.created_at|date:"d M Y" }}</p>
                     </div>
                 </div>
                 <a href="{% url 'profile' %}" class="btn btn-sm btn-outline-primary">
-                    <i class="bi bi-pencil"></i> Update Profile
+                    <i class="bi bi-pencil"></i> {% trans "Mettre à Jour le Profil" %}
                 </a>
             </div>
         </div>
@@ -123,7 +126,7 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="bi bi-arrow-left-right"></i> My Recent Transfers
+                    <i class="bi bi-arrow-left-right"></i> {% trans "Mes Transferts Récents" %}
                 </h5>
             </div>
             <div class="card-body">
@@ -133,11 +136,11 @@
                             <thead>
                                 <tr>
                                     <th>ID</th>
-                                    <th>Beneficiary</th>
-                                    <th>Amount</th>
-                                    <th>Status</th>
-                                    <th>Commission</th>
-                                    <th>Created</th>
+                                    <th>{% trans "Bénéficiaire" %}</th>
+                                    <th>{% trans "Montant" %}</th>
+                                    <th>{% trans "Statut" %}</th>
+                                    <th>{% trans "Commission" %}</th>
+                                    <th>{% trans "Créé" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -169,7 +172,7 @@
                                             <span class="text-muted">-</span>
                                         {% endif %}
                                     </td>
-                                    <td class="text-muted">{{ transfer.created_at|date:"M d, Y H:i" }}</td>
+                                    <td class="text-muted">{{ transfer.created_at|date:"d M Y H:i" }}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -177,16 +180,16 @@
                     </div>
                     <div class="text-center">
                         <a href="{% url 'transfer_list' %}" class="btn btn-outline-primary">
-                            View All My Transfers
+                            {% trans "Voir Tous Mes Transferts" %}
                         </a>
                     </div>
                 {% else %}
                     <div class="text-center py-4">
                         <i class="bi bi-arrow-left-right display-1 text-muted"></i>
-                        <h4 class="mt-3">No transfers yet</h4>
-                        <p class="text-muted">Start by declaring your first transfer.</p>
+                        <h4 class="mt-3">{% trans "Aucun transfert pour le moment" %}</h4>
+                        <p class="text-muted">{% trans "Commencez par déclarer votre premier transfert." %}</p>
                         <a href="{% url 'create_transfer' %}" class="btn btn-primary">
-                            <i class="bi bi-plus-circle"></i> Declare Transfer
+                            <i class="bi bi-plus-circle"></i> {% trans "Déclarer Transfert" %}
                         </a>
                     </div>
                 {% endif %}
@@ -198,7 +201,7 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="bi bi-cash-coin"></i> Recent Commission Earnings
+                    <i class="bi bi-cash-coin"></i> {% trans "Gains de Commission Récents" %}
                 </h5>
             </div>
             <div class="card-body">
@@ -206,20 +209,20 @@
                     {% for commission in recent_commissions %}
                     <div class="d-flex justify-content-between align-items-center py-2 {% if not forloop.last %}border-bottom{% endif %}">
                         <div>
-                            <div class="fw-bold">Transfer #{{ commission.transfer.id }}</div>
-                            <small class="text-muted">{{ commission.created_at|date:"M d, Y" }}</small>
+                            <div class="fw-bold">{% trans "Transfert" %} #{{ commission.transfer.id }}</div>
+                            <small class="text-muted">{{ commission.created_at|date:"d M Y" }}</small>
                         </div>
                         <div class="text-end">
                             <div class="text-success fw-bold">+{{ commission.declaring_agent_amount|floatformat:2 }} EUR</div>
-                            <small class="text-muted">{{ commission.config_used.commission_rate }}% rate</small>
+                            <small class="text-muted">{% trans "taux" %} {{ commission.config_used.commission_rate }}%</small>
                         </div>
                     </div>
                     {% endfor %}
                 {% else %}
                     <div class="text-center py-3">
                         <i class="bi bi-cash-coin display-4 text-muted"></i>
-                        <p class="text-muted mt-2 mb-0">No commissions yet</p>
-                        <small class="text-muted">Complete transfers to earn commissions</small>
+                        <p class="text-muted mt-2 mb-0">{% trans "Aucune commission pour le moment" %}</p>
+                        <small class="text-muted">{% trans "Terminez des transferts pour gagner des commissions" %}</small>
                     </div>
                 {% endif %}
             </div>
@@ -233,7 +236,7 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="bi bi-clock-history"></i> My Recent Activity
+                    <i class="bi bi-clock-history"></i> {% trans "Mon Activité Récente" %}
                 </h5>
             </div>
             <div class="card-body">
@@ -242,16 +245,16 @@
                         <table class="table table-sm">
                             <thead>
                                 <tr>
-                                    <th>Action</th>
-                                    <th>Time</th>
-                                    <th>Details</th>
+                                    <th>{% trans "Action" %}</th>
+                                    <th>{% trans "Heure" %}</th>
+                                    <th>{% trans "Détails" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for activity in my_activities %}
                                 <tr>
                                     <td>{{ activity.action|title }}</td>
-                                    <td class="text-muted">{{ activity.timestamp|timesince }} ago</td>
+                                    <td class="text-muted">{{ activity.timestamp|timesince }} {% trans "il y a" %}</td>
                                     <td class="text-muted small">
                                         {% if activity.details %}
                                             {{ activity.details|truncatechars:100 }}
@@ -265,7 +268,7 @@
                         </table>
                     </div>
                 {% else %}
-                    <p class="text-muted">No recent activity</p>
+                    <p class="text-muted">{% trans "Aucune activité récente" %}</p>
                 {% endif %}
             </div>
         </div>

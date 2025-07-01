@@ -1,17 +1,18 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}Manager Dashboard - Money Transfer App{% endblock %}
+{% block title %}{% trans "Tableau de Bord Gestionnaire" %} - {% trans "Application de Transfert d'Argent" %}{% endblock %}
 
 {% block content %}
 <div class="row">
     <div class="col-12">
         <h1 class="mb-1">
-            <i class="bi bi-speedometer2"></i> Manager Dashboard
+            <i class="bi bi-speedometer2"></i> {% trans "Tableau de Bord" %}
             {% if user.is_superuser %}
-                <span class="badge bg-danger ms-2">SUPERUSER</span>
+                <span class="badge bg-danger ms-2">{% trans "SUPERUTILISATEUR" %}</span>
             {% endif %}
         </h1>
-        <small class="text-muted d-block mb-3">Welcome, {{ user.get_full_name|default:user.username }}</small>
+        <small class="text-muted d-block mb-3">{% trans "Bienvenue" %}, {{ user.get_full_name|default:user.username }}</small>
     </div>
 </div>
 
@@ -25,7 +26,7 @@
                         <i class="bi bi-people display-6"></i>
                     </div>
                     <div>
-                        <h5 class="card-title">Active Agents</h5>
+                        <h5 class="card-title">{% trans "Agents Actifs" %}</h5>
                         <h2 class="mb-0">{{ total_agents }}</h2>
                     </div>
                 </div>
@@ -41,7 +42,7 @@
                         <i class="bi bi-clock display-6"></i>
                     </div>
                     <div>
-                        <h5 class="card-title">Pending Transfers</h5>
+                        <h5 class="card-title">{% trans "Transferts en Attente" %}</h5>
                         <h2 class="mb-0">{{ pending_transfers }}</h2>
                     </div>
                 </div>
@@ -57,7 +58,7 @@
                         <i class="bi bi-check-circle display-6"></i>
                     </div>
                     <div>
-                        <h5 class="card-title">Validated</h5>
+                        <h5 class="card-title">{% trans "Validés" %}</h5>
                         <h2 class="mb-0">{{ validated_transfers }}</h2>
                     </div>
                 </div>
@@ -73,7 +74,7 @@
                         <i class="bi bi-check-all display-6"></i>
                     </div>
                     <div>
-                        <h5 class="card-title">Completed</h5>
+                        <h5 class="card-title">{% trans "Terminés" %}</h5>
                         <h2 class="mb-0">{{ completed_transfers }}</h2>
                     </div>
                 </div>
@@ -88,49 +89,49 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="bi bi-lightning"></i> Quick Actions
+                    <i class="bi bi-lightning"></i> {% trans "Actions Rapides" %}
                 </h5>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-3 mb-2">
                         <a href="{% url 'create_user' %}" class="btn btn-outline-primary w-100">
-                            <i class="bi bi-person-plus"></i> Create User
+                            <i class="bi bi-person-plus"></i> {% trans "Créer Utilisateur" %}
                         </a>
                     </div>
                     <div class="col-md-3 mb-2">
                         <a href="{% url 'user_list' %}" class="btn btn-outline-secondary w-100">
-                            <i class="bi bi-people"></i> Manage Users
+                            <i class="bi bi-people"></i> {% trans "Gérer Utilisateurs" %}
                         </a>
                     </div>
                     <div class="col-md-3 mb-2">
                         <a href="{% url 'create_transfer' %}" class="btn btn-outline-success w-100">
-                            <i class="bi bi-plus-circle"></i> New Transfer
+                            <i class="bi bi-plus-circle"></i> {% trans "Nouveau Transfert" %}
                         </a>
                     </div>
                     <div class="col-md-3 mb-2">
                         <a href="{% url 'pending_transfers' %}" class="btn btn-outline-warning w-100">
-                            <i class="bi bi-clock"></i> Pending
+                            <i class="bi bi-clock"></i> {% trans "En Attente" %}
                         </a>
                     </div>
                     <div class="col-md-3 mb-2">
                         <a href="{% url 'stock_list' %}" class="btn btn-outline-info w-100">
-                            <i class="bi bi-bank"></i> Stock
+                            <i class="bi bi-bank"></i> {% trans "Stock" %}
                         </a>
                     </div>
                     <div class="col-md-3 mb-2">
                         <a href="{% url 'deposit' %}" class="btn btn-outline-success w-100">
-                            <i class="bi bi-cash-coin"></i> Declare Money Deposit
+                            <i class="bi bi-cash-coin"></i> {% trans "Déclarer Dépôt d'Argent" %}
                         </a>
                     </div>
                     <div class="col-md-3 mb-2">
                         <a href="{% url 'commission_config_list' %}" class="btn btn-outline-dark w-100">
-                            <i class="bi bi-gear"></i> Commissions
+                            <i class="bi bi-gear"></i> {% trans "Commissions" %}
                         </a>
                     </div>
-                    <div class="col-md-3 mb-2"> 
+                    <div class="col-md-3 mb-2">
                         <a href="{% url 'exchange_rate_list' %}" class="btn btn-outline-warning w-100">
-                            <i class="bi bi-currency-exchange"></i> Rates
+                            <i class="bi bi-currency-exchange"></i> {% trans "Taux" %}
                         </a>
                     </div>
                 </div>
@@ -145,7 +146,7 @@
         <div class="card mb-4">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="bi bi-bank"></i> Stock Overview
+                    <i class="bi bi-bank"></i> {% trans "Aperçu du Stock" %}
                 </h5>
             </div>
             <div class="card-body">
@@ -154,9 +155,9 @@
                         <table class="table table-sm">
                             <thead>
                                 <tr>
-                                    <th>Currency</th>
-                                    <th>Location</th>
-                                    <th>Amount</th>
+                                    <th>{% trans "Devise" %}</th>
+                                    <th>{% trans "Localisation" %}</th>
+                                    <th>{% trans "Montant" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -173,9 +174,9 @@
                         </table>
                     </div>
                 {% else %}
-                    <p class="text-muted">No stock data available</p>
+                    <p class="text-muted">{% trans "Aucune donnée de stock disponible" %}</p>
                     <a href="{% url 'create_stock' %}" class="btn btn-sm btn-primary">
-                        <i class="bi bi-plus"></i> Add Stock
+                        <i class="bi bi-plus"></i> {% trans "Ajouter Stock" %}
                     </a>
                 {% endif %}
             </div>
@@ -184,7 +185,7 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <span class="me-1">💰</span> Commissions
+                    <span class="me-1">💰</span> {% trans "Commissions" %}
                 </h5>
             </div>
             <div class="card-body">
@@ -192,28 +193,28 @@
                     <div class="row text-center mb-3">
                         <div class="col-12">
                             <h4 class="text-primary">{{ total_commissions.total_paid|floatformat:2 }} EUR</h4>
-                            <small class="text-muted">Total Commissions received </small>
+                            <small class="text-muted">{% trans "Total Commissions reçues" %}</small>
                         </div>
                     </div>
 
                     <div class="row text-center">
                         <div class="col-6">
                             <div class="text-success fw-bold">{{ total_commissions.total_to_agents|floatformat:2 }} €</div>
-                            <small class="text-muted">To Agents</small>
+                            <small class="text-muted">{% trans "Aux Agents" %}</small>
                         </div>
                         <div class="col-6">
                             <div class="text-info fw-bold">{{ total_commissions.total_to_managers|floatformat:2 }} €</div>
-                            <small class="text-muted">To Managers</small>
+                            <small class="text-muted">{% trans "Aux Gestionnaires" %}</small>
                         </div>
                     </div>
 
                     <hr>
 
-                    <h6 class="mb-2">Recent Commissions</h6>
+                    <h6 class="mb-2">{% trans "Commissions Récentes" %}</h6>
                     {% for commission in recent_commissions %}
                     <div class="d-flex justify-content-between align-items-center py-1">
                         <div>
-                            <small>Transfer #{{ commission.transfer.id }}</small>
+                            <small>{% trans "Transfert" %} #{{ commission.transfer.id }}</small>
                             <br><small class="text-muted">{{ commission.agent.username }}</small>
                         </div>
                         <div class="text-end">
@@ -224,14 +225,14 @@
                 {% else %}
                     <div class="text-center py-3">
                         <i class="bi bi-percent display-4 text-muted"></i>
-                        <p class="text-muted mt-2 mb-0">No commissions yet</p>
-                        <small class="text-muted">Validate transfers to generate commissions</small>
+                        <p class="text-muted mt-2 mb-0">{% trans "Aucune commission pour le moment" %}</p>
+                        <small class="text-muted">{% trans "Validez des transferts pour générer des commissions" %}</small>
                     </div>
                 {% endif %}
 
                 <div class="text-center mt-3">
                     <a href="{% url 'commissions_overview' %}" class="btn btn-outline-info">
-                        <i class="bi bi-list-check"></i> View All Commissions
+                        <i class="bi bi-list-check"></i> {% trans "Voir Toutes les Commissions" %}
                     </a>
                 </div>
             </div>
@@ -242,7 +243,7 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="bi bi-clock-history"></i> Recent Transfers
+                    <i class="bi bi-clock-history"></i> {% trans "Transferts Récents" %}
                 </h5>
             </div>
             <div class="card-body">
@@ -251,10 +252,10 @@
                         <table class="table table-sm">
                             <thead>
                                 <tr>
-                                    <th>Beneficiary</th>
-                                    <th>Amount</th>
-                                    <th>Agent</th>
-                                    <th>Status</th>
+                                    <th>{% trans "Bénéficiaire" %}</th>
+                                    <th>{% trans "Montant" %}</th>
+                                    <th>{% trans "Agent" %}</th>
+                                    <th>{% trans "Statut" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -275,13 +276,13 @@
                     </div>
                     <div class="text-center mt-2">
                         <a href="{% url 'transfer_list' %}" class="btn btn-sm btn-outline-primary">
-                            View All Transfers
+                            {% trans "Voir Tous les Transferts" %}
                         </a>
                     </div>
                 {% else %}
-                    <p class="text-muted">No transfers yet</p>
+                    <p class="text-muted">{% trans "Aucun transfert pour le moment" %}</p>
                     <a href="{% url 'create_transfer' %}" class="btn btn-sm btn-primary">
-                        <i class="bi bi-plus"></i> Create Transfer
+                        <i class="bi bi-plus"></i> {% trans "Créer Transfert" %}
                     </a>
                 {% endif %}
             </div>
@@ -295,9 +296,9 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="bi bi-activity"></i> Recent System Activity
+                    <i class="bi bi-activity"></i> {% trans "Activité Système Récente" %}
                     {% if user.is_superuser %}
-                        <span class="badge bg-danger ms-2">SUPERUSER VIEW</span>
+                        <span class="badge bg-danger ms-2">{% trans "VUE SUPERUTILISATEUR" %}</span>
                     {% endif %}
                 </h5>
             </div>
@@ -307,10 +308,10 @@
                         <table class="table table-sm">
                             <thead>
                                 <tr>
-                                    <th>User</th>
-                                    <th>Action</th>
-                                    <th>Details</th>
-                                    <th>Time</th>
+                                    <th>{% trans "Utilisateur" %}</th>
+                                    <th>{% trans "Action" %}</th>
+                                    <th>{% trans "Détails" %}</th>
+                                    <th>{% trans "Heure" %}</th>
                                     {% if user.is_superuser %}
                                     <th>IP</th>
                                     {% endif %}
@@ -358,7 +359,7 @@
                                     </td>
                                     <td class="text-muted">
                                         <span data-bs-toggle="tooltip" title="{{ activity.timestamp|date:'F d, Y H:i:s' }}">
-                                            {{ activity.timestamp|timesince }} ago
+                                            {% trans "il y a" %} {{ activity.timestamp|timesince }}
                                         </span>
                                     </td>
                                     {% if user.is_superuser %}
@@ -373,12 +374,11 @@
                     <div class="text-center mt-3">
                         <small class="text-muted">
                             <i class="bi bi-info-circle"></i>
-                            Showing latest system activities.
-                            {% if not user.is_superuser %}IP addresses hidden for security.{% endif %}
+                            {% trans "Affichage des dernières activités système." %}
                         </small>
                     </div>
                 {% else %}
-                    <p class="text-muted">No recent activity</p>
+                    <p class="text-muted">{% trans "Aucune activité récente" %}</p>
                 {% endif %}
             </div>
         </div>

@@ -1,26 +1,25 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}Create User - Money Transfer App{% endblock %}
+{% block title %}{% trans "Créer un Utilisateur - Application de Transfert d'Argent" %}{% endblock %}
 
 {% block content %}
-
-
 {% if form.non_field_errors %}
-    <div class="d-inline-block bg-danger text-white small px-3 py-1 rounded">
-        {% for error in form.non_field_errors %}
-        <div>{{ error }}</div>
-        {% endfor %}
-    </div>
+<div class="d-inline-block bg-danger text-white small px-3 py-1 rounded">
+    {% for error in form.non_field_errors %}
+    <div>{{ error }}</div>
+    {% endfor %}
+</div>
 {% endif %}
 
-<div class="row">
-    <div class="col-12">
+<div class="row justify-content-center">
+    <div class="col-8">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>
-                <i class="bi bi-person-plus"></i> Create New User
-            </h1>
+            <h2>
+                <i class="bi bi-person-plus"></i> {% trans "Créer un Nouvel Utilisateur" %}
+            </h2>
             <a href="{% url 'user_list' %}" class="btn btn-secondary">
-                <i class="bi bi-arrow-left"></i> Back to Users
+                <i class="bi bi-arrow-left"></i> {% trans "Retour aux Utilisateurs" %}
             </a>
         </div>
     </div>
@@ -30,30 +29,30 @@
     <div class="col-md-8">
         <div class="card">
             <div class="card-body">
-                <form method="post" autocomplete="off">
+                <form method="post" autocomplete="off" id="create-user-form" novalidate>
                     {% csrf_token %}
 
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="{{ form.username.id_for_label }}" class="form-label">Username *</label>
+                                <label for="{{ form.username.id_for_label }}" class="form-label">{% trans "Nom d'Utilisateur" %} *</label>
                                 {{ form.username }}
                                 {% if form.username.errors %}
-                                    <div class="text-danger small mt-1">
-                                        {{ form.username.errors.0 }}
-                                    </div>
+                                <div class="text-danger small mt-1">
+                                    {{ form.username.errors.0 }}
+                                </div>
                                 {% endif %}
                             </div>
                         </div>
 
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="{{ form.user_type.id_for_label }}" class="form-label">User Type *</label>
+                                <label for="{{ form.user_type.id_for_label }}" class="form-label">{% trans "Type d'Utilisateur" %} *</label>
                                 {{ form.user_type }}
                                 {% if form.user_type.errors %}
-                                    <div class="text-danger small mt-1">
-                                        {{ form.user_type.errors.0 }}
-                                    </div>
+                                <div class="text-danger small mt-1">
+                                    {{ form.user_type.errors.0 }}
+                                </div>
                                 {% endif %}
                             </div>
                         </div>
@@ -62,95 +61,76 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="{{ form.first_name.id_for_label }}" class="form-label">First Name *</label>
+                                <label for="{{ form.first_name.id_for_label }}" class="form-label">{% trans "Prénom" %} *</label>
                                 {{ form.first_name }}
                                 {% if form.first_name.errors %}
-                                    <div class="text-danger small mt-1">
-                                        {{ form.first_name.errors.0 }}
-                                    </div>
+                                <div class="text-danger small mt-1">
+                                    {{ form.first_name.errors.0 }}
+                                </div>
                                 {% endif %}
                             </div>
                         </div>
 
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="{{ form.last_name.id_for_label }}" class="form-label">Last Name *</label>
+                                <label for="{{ form.last_name.id_for_label }}" class="form-label">{% trans "Nom de Famille" %} *</label>
                                 {{ form.last_name }}
                                 {% if form.last_name.errors %}
-                                    <div class="text-danger small mt-1">
-                                        {{ form.last_name.errors.0 }}
-                                    </div>
+                                <div class="text-danger small mt-1">
+                                    {{ form.last_name.errors.0 }}
+                                </div>
                                 {% endif %}
                             </div>
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label for="{{ form.email.id_for_label }}" class="form-label">Email *</label>
+                        <label for="{{ form.email.id_for_label }}" class="form-label">{% trans "Email" %} *</label>
                         {{ form.email }}
                         {% if form.email.errors %}
-                            <div class="text-danger small mt-1">
-                                {{ form.email.errors.0 }}
-                            </div>
+                        <div class="text-danger small mt-1">
+                            {{ form.email.errors.0 }}
+                        </div>
                         {% endif %}
                     </div>
 
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="{{ form.phone.id_for_label }}" class="form-label">Phone</label>
+                                <label for="{{ form.phone.id_for_label }}" class="form-label">{% trans "Téléphone" %}</label>
                                 {{ form.phone }}
                                 {% if form.phone.errors %}
-                                    <div class="text-danger small mt-1">
-                                        {{ form.phone.errors.0 }}
-                                    </div>
+                                <div class="text-danger small mt-1">
+                                    {{ form.phone.errors.0 }}
+                                </div>
                                 {% endif %}
                             </div>
                         </div>
 
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="{{ form.location.id_for_label }}" class="form-label">Location</label>
+                                <label for="{{ form.location.id_for_label }}" class="form-label">{% trans "Emplacement" %}</label>
                                 {{ form.location }}
                                 {% if form.location.errors %}
-                                    <div class="text-danger small mt-1">
-                                        {{ form.location.errors.0 }}
-                                    </div>
+                                <div class="text-danger small mt-1">
+                                    {{ form.location.errors.0 }}
+                                </div>
                                 {% endif %}
                             </div>
                         </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="{{ form.password1.id_for_label }}" class="form-label">Password *</label>
-                                {{ form.password1 }}
-                                {% if form.password1.errors %}
-                                    <div class="text-danger small mt-1">
-                                        {{ form.password1.errors.0 }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="{{ form.password2.id_for_label }}" class="form-label">Confirm Password *</label>
-                                {{ form.password2 }}
-                                {% if form.password2.errors %}
-                                    <div class="text-danger small mt-1">
-                                        {{ form.password2.errors.0 }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle-fill alert-icon"></i>
+                        {% trans "Un lien de configuration de mot de passe sera envoyé à l'adresse email de l'utilisateur." %}
                     </div>
 
                     <div class="d-flex justify-content-end gap-2">
-                        <a href="{% url 'user_list' %}" class="btn btn-secondary">Cancel</a>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check-lg"></i> Create User
+                        <a href="{% url 'user_list' %}" class="btn btn-secondary">{% trans "Annuler" %}</a>
+                        <button type="submit" class="btn btn-primary" id="submit-btn">
+                            <span class="spinner-border spinner-border-sm d-none" role="status"
+                                  aria-hidden="true"></span>
+                            <i class="bi bi-check-lg"></i> {% trans "Créer un Utilisateur" %}
                         </button>
                     </div>
                 </form>
@@ -158,4 +138,112 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.getElementById('create-user-form');
+        const submitBtn = document.getElementById('submit-btn');
+        const spinner =countryBtn.querySelector('.spinner-border');
+
+        form.addEventListener('submit', (e) => {
+            // Client-side validation
+            const requiredFields = ['username', 'user_type', 'first_name', 'last_name', 'email'];
+            let isValid = true;
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            requiredFields.forEach(fieldName => {
+                const input = form.querySelector(`[name="${fieldName}"]`);
+                const errorDiv = input.nextElementSibling?.classList.contains('text-danger')
+                    ? input.nextElementSibling
+                    : null;
+
+                if (errorDiv) {
+                    errorDiv.remove();
+                }
+
+                if (!input.value.trim()) {
+                    isValid = false;
+                    const error = document.createElement('div');
+                    error.className = 'text-danger small mt-1';
+                    error.textContent = '{% trans "Ce champ est requis" %}';
+                    input.classList.add('is-invalid');
+                    input.parentNode.appendChild(error);
+                } else {
+                    input.classList.remove('is-invalid');
+                    input.classList.add('is-valid');
+                }
+
+                if (fieldName === 'email' && input.value.trim() && !emailRegex.test(input.value)) {
+                    isValid = false;
+                    const error = document.createElement('div');
+                    error.className = 'text-danger small mt-1';
+                    error.textContent = '{% trans "Entrez une adresse email valide" %}';
+                    input.classList.add('is-invalid');
+                    input.classList.remove('is-valid');
+                    input.parentNode.appendChild(error);
+                }
+            });
+
+            if (!isValid) {
+                e.preventDefault();
+                return;
+            }
+
+            // Show loading state
+            submitBtn.disabled = true;
+            spinner.classList.remove('d-none');
+        });
+
+        // Real-time validation
+        form.querySelectorAll('input, select').forEach(input => {
+            input.addEventListener('input', () => {
+                const errorDiv = input.nextElementSibling?.classList.contains('text-danger')
+                    ? input.nextElementSibling
+                    : null;
+
+                if (errorDiv) {
+                    errorDiv.remove();
+                }
+
+                if (input.value.trim()) {
+                    if (input.name === 'email') {
+                        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                        if (emailRegex.test(input.value)) {
+                            input.classList.add('is-valid');
+                            input.classList.remove('is-invalid');
+                        } else {
+                            input.classList.add('is-invalid');
+                            input.classList.remove('is-valid');
+                        }
+                    } else {
+                        input.classList.add('is-valid');
+                        input.classList.remove('is-invalid');
+                    }
+                } else if (input.required) {
+                    input.classList.add('is-invalid');
+                    input.classList.remove('is-valid');
+                }
+            });
+        });
+    });
+</script>
+<style>
+    .is-valid {
+        border-color: #28a745 !important;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%2328a745' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4.3 4.8c-.4.43-1.1.43-1.7 0z'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right calc(0.375em + 0.1875rem) center;
+        background-size: 1.125rem;
+    }
+
+    .is-invalid {
+        border-color: #dc3545 !important;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right calc(0.375em + 0.1875rem) center;
+        background-size: 1.125rem;
+    }
+</style>
 {% endblock %}

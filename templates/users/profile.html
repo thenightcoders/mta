@@ -1,13 +1,21 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}Profile - Money Transfer App{% endblock %}
+{% block title %}{% trans "Profil" %} - {% trans "Application de Transfert d'Argent" %}{% endblock %}
 
 {% block content %}
 <div class="row">
     <div class="col-12">
-        <h1 class="mb-4">
-            <i class="bi bi-person"></i> My Profile
-        </h1>
+
+    </div>
+</div>
+<div class="row justify-content-center">
+    <div class="col-8">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-4">
+                <i class="bi bi-person"></i> {% trans "Mon Profil" %}
+            </h2>
+        </div>
     </div>
 </div>
 
@@ -15,7 +23,7 @@
     <div class="col-md-8">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">Personal Information</h5>
+                <h5 class="mb-0">{% trans "Informations Personnelles" %}</h5>
             </div>
             <div class="card-body">
                 <form method="post">
@@ -24,15 +32,15 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label">Username</label>
+                                <label class="form-label">{% trans "Nom d'utilisateur" %}</label>
                                 <input type="text" class="form-control" value="{{ user.username }}" readonly>
-                                <small class="text-muted">Username cannot be changed</small>
+                                <small class="text-muted">{% trans "Le nom d'utilisateur ne peut pas être modifié" %}</small>
                             </div>
                         </div>
 
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label">User Type</label>
+                                <label class="form-label">{% trans "Type d'Utilisateur" %}</label>
                                 <input type="text" class="form-control" value="{{ user.get_user_type_display }}" readonly>
                             </div>
                         </div>
@@ -41,53 +49,53 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label">First Name</label>
+                                <label class="form-label">{% trans "Prénom" %}</label>
                                 {% if user.is_manager or user.is_superuser %}
-                                    <input type="text" class="form-control" name="first_name" value="{{ user.first_name }}" placeholder="Enter your first name">
+                                    <input type="text" class="form-control" name="first_name" value="{{ user.first_name }}" placeholder="{% trans 'Entrez votre prénom' %}">
                                 {% else %}
                                     <input type="text" class="form-control" value="{{ user.first_name }}" readonly>
-                                    <small class="text-muted">Contact a manager to change this</small>
+                                    <small class="text-muted">{% trans "Contactez un gestionnaire pour modifier ceci" %}</small>
                                 {% endif %}
                             </div>
                         </div>
 
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label">Last Name</label>
+                                <label class="form-label">{% trans "Nom de Famille" %}</label>
                                 {% if user.is_manager or user.is_superuser %}
-                                    <input type="text" class="form-control" name="last_name" value="{{ user.last_name }}" placeholder="Enter your last name">
+                                    <input type="text" class="form-control" name="last_name" value="{{ user.last_name }}" placeholder="{% trans 'Entrez votre nom de famille' %}">
                                 {% else %}
                                     <input type="text" class="form-control" value="{{ user.last_name }}" readonly>
-                                    <small class="text-muted">Contact a manager to change this</small>
+                                    <small class="text-muted">{% trans "Contactez un gestionnaire pour modifier ceci" %}</small>
                                 {% endif %}
                             </div>
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Email</label>
+                        <label class="form-label">{% trans "Email" %}</label>
                         {% if user.is_manager or user.is_superuser %}
-                            <input type="email" class="form-control" name="email" value="{{ user.email }}" placeholder="Enter your email">
+                            <input type="email" class="form-control" name="email" value="{{ user.email }}" placeholder="{% trans 'Entrez votre email' %}">
                         {% else %}
                             <input type="email" class="form-control" value="{{ user.email }}" readonly>
-                            <small class="text-muted">Contact a manager to change this</small>
+                            <small class="text-muted">{% trans "Contactez un gestionnaire pour modifier ceci" %}</small>
                         {% endif %}
                     </div>
 
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="phone" class="form-label">Phone</label>
+                                <label for="phone" class="form-label">{% trans "Téléphone" %}</label>
                                 <input type="text" class="form-control" name="phone" id="phone"
-                                       value="{{ user.phone }}" placeholder="Enter your phone number">
+                                       value="{{ user.phone }}" placeholder="{% trans 'Entrez votre numéro de téléphone' %}">
                             </div>
                         </div>
 
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="location" class="form-label">Location</label>
+                                <label for="location" class="form-label">{% trans "Localisation" %}</label>
                                 <input type="text" class="form-control" name="location" id="location"
-                                       value="{{ user.location }}" placeholder="Enter your city/region">
+                                       value="{{ user.location }}" placeholder="{% trans 'Entrez votre ville/région' %}">
                             </div>
                         </div>
                     </div>
@@ -95,23 +103,23 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label">Member Since</label>
-                                <input type="text" class="form-control" value="{{ user.created_at|date:'F d, Y' }}" readonly>
+                                <label class="form-label">{% trans "Membre Depuis" %}</label>
+                                <input type="text" class="form-control" value="{{ user.created_at|date:'d F Y' }}" readonly>
                             </div>
                         </div>
 
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label">Account Status</label>
-                                <input type="text" class="form-control" value="{% if user.is_active_user %}Active{% else %}Inactive{% endif %}" readonly>
+                                <label class="form-label">{% trans "Statut du Compte" %}</label>
+                                <input type="text" class="form-control" value="{% if user.is_active_user %}{% trans 'Actif' %}{% else %}{% trans 'Inactif' %}{% endif %}" readonly>
                             </div>
                         </div>
                     </div>
 
                     <div class="d-flex justify-content-end gap-2">
-                        <a href="{% url 'dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+                        <a href="{% url 'dashboard' %}" class="btn btn-secondary">{% trans "Retour au Tableau de Bord" %}</a>
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check-lg"></i> Update Profile
+                            <i class="bi bi-check-lg"></i> {% trans "Mettre à Jour le Profil" %}
                         </button>
                     </div>
                 </form>
