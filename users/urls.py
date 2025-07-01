@@ -19,4 +19,7 @@ urlpatterns = [
 
     # Profile
     path('profile/', views.profile, name='profile'),
+
+    path('setup-password/<uidb64>/<token>/', views.setup_password, name='setup_password'),
+path('users/<int:user_id>/delete/', views.delete_user, name='delete_user'),
 ]

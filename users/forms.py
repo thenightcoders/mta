@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm as BaseUserCreationForm
+
 from .models import User
 
 
@@ -21,20 +21,23 @@ class LoginForm(forms.Form):
     )
 
 
-class UserCreationForm(BaseUserCreationForm):
+class UserCreationForm(forms.ModelForm):
     """Form for creating new users"""
 
     class Meta:
         model = User
-        fields = ('username', 'first_name', 'last_name', 'email', 'user_type',
-                  'phone', 'location', 'password1', 'password2')
+        fields = ('username', 'first_name', 'last_name', 'email', 'user_type', 'phone', 'location')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Add Bootstrap classes
+        # Add Bootstrap classes and validation attributes
         for field_name, field in self.fields.items():
             field.widget.attrs['class'] = 'form-control'
+            if field_name in ['username', 'first_name', 'last_name', 'email', 'user_type']:
+                field.widget.attrs['required'] = True
+            if field_name == 'email':
+                field.widget.attrs['type'] = 'email'
 
         # Make some fields required
         self.fields['first_name'].required = True

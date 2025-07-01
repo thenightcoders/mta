@@ -1,14 +1,27 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login, logout, authenticate
-from django.contrib.auth.decorators import login_required
+import logging
+
 from django.contrib import messages
-from django.http import HttpResponseForbidden, JsonResponse
-from django.views.decorators.http import require_http_methods
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import SetPasswordForm
+from django.contrib.auth.tokens import default_token_generator
 from django.core.exceptions import ValidationError
-from django.db.models import Count, Q, Sum
+from django.core.mail import send_mail
 from django.db import models
-from .models import User, UserActivity
+from django.db.models import Count, Q, Sum
+from django.http import HttpResponseForbidden, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
+from django.urls import reverse
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from django.views.decorators.http import require_http_methods
+
+from config import settings
 from .forms import LoginForm, UserCreationForm, UserUpdateForm
+from .models import User, UserActivity
+
+logger = logging.getLogger(__name__)
 
 
 def log_user_activity(user, action, details=None, request=None):
@@ -92,7 +105,8 @@ def manager_dashboard(request):
         # Managers see only regular users (no superusers)
         total_agents = User.objects.filter(user_type='agent', is_active_user=True, is_superuser=False).count()
         total_managers = User.objects.filter(user_type='manager', is_active_user=True, is_superuser=False).count()
-        recent_activities = UserActivity.objects.filter(user__is_superuser=False).select_related('user').order_by('-timestamp')[:15]
+        recent_activities = UserActivity.objects.filter(user__is_superuser=False).select_related('user').order_by(
+                '-timestamp')[:15]
 
     # Transfer stats
     pending_transfers = Transfer.objects.filter(status='PENDING').count()
@@ -198,13 +212,65 @@ def create_user(request):
     if request.method == 'POST':
         form = UserCreationForm(request.POST)
         if form.is_valid():
+            logger.info(f"Creating user with form data: {form.cleaned_data}")
+
             user = form.save(commit=False)
             user.created_by = request.user
+            # DON'T set unusable password - let them have a temp one
+            user.set_password('TempPass123!')  # They'll change it via email link
 
             try:
                 user.full_clean()
                 user.save()
+                logger.info(f"User {user.username} created successfully")
 
+                # Generate password reset token
+                token = default_token_generator.make_token(user)
+                uid = urlsafe_base64_encode(force_bytes(user.pk))
+                reset_link = request.build_absolute_uri(
+                        reverse('setup_password', kwargs={'uidb64': uid, 'token': token})
+                )
+
+                logger.info(f"Generated reset link for {user.username}: {reset_link}")
+
+                # Try sending email with proper error handling
+                try:
+                    # Import and use your context processor
+                    from users.context_processors import site_info
+
+                    # Get site context (pass None since we don't need request)
+                    site_context = site_info(None)
+
+                    # Render the email template
+                    email_html = render_to_string('emails/password_setup.html', {
+                        'user': user,
+                        'reset_link': reset_link,
+                        'support_email': settings.DEFAULT_FROM_EMAIL,
+                        'site_name': site_context['site_name'],
+                        'site_name_formal': site_context['site_name_formal'],
+                    })
+
+                    # Dynamic subject line
+                    subject = f'Set Your Password - {site_context["site_name_formal"]}' if site_context[
+                                                                                               'site_name_formal'] != 'Our Platform' else 'Set Your Password'
+
+                    send_mail(
+                            subject=subject,
+                            message=f'Set your password here: {reset_link}',
+                            html_message=email_html,
+                            from_email=settings.DEFAULT_FROM_EMAIL,
+                            recipient_list=[user.email],
+                            fail_silently=False,
+                    )
+
+                except Exception as email_error:
+                    logger.error(f"Failed to send email to {user.email}: {email_error}")
+                    # Don't fail the user creation just because email failed
+                    messages.warning(request,
+                                     f'User {user.username} created but email failed to send. '
+                                     f'Please set their password manually.')
+
+                # Log the activity
                 log_user_activity(
                         request.user,
                         'user_created',
@@ -212,20 +278,65 @@ def create_user(request):
                         request
                 )
 
-                messages.success(request, f'User {user.username} created successfully')
+                messages.success(request, f'User {user.username} created successfully.')
                 return redirect('user_list')
 
             except ValidationError as e:
+                logger.error(f"Validation error creating user: {e}")
                 for field, errors in e.message_dict.items():
                     if field == '__all__':
                         form.add_error(None, errors)
                     else:
                         for error in errors:
                             form.add_error(field, error)
+            except Exception as e:
+                logger.error(f"Unexpected error creating user: {e}")
+                messages.error(request, f"Failed to create user: {e}")
+        else:
+            print(f"Form is not valid: {form.errors}")
+            logger.warning(f"Form errors: {form.errors}")
+            messages.error(request, 'Please correct the errors below.')
     else:
         form = UserCreationForm()
 
     return render(request, 'users/create_user.html', {'form': form})
+
+
+def setup_password(request, uidb64, token):
+    """Allow new users to set their password"""
+    try:
+        uid = urlsafe_base64_decode(uidb64).decode()
+        user = User.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        user = None
+
+    if user is not None and default_token_generator.check_token(user, token):
+        if request.method == 'POST':
+            form = SetPasswordForm(user, request.POST)
+            if form.is_valid():
+                form.save()
+                messages.success(request, 'Password set successfully! You can now log in.')
+                return redirect('login')
+        else:
+            form = SetPasswordForm(user)
+
+        # Get site name from settings or use fallback
+        site_name = getattr(settings, 'SITE_NAME', '').strip()
+        if not site_name:
+            site_name = 'our platform'
+            site_name_formal = 'Our Platform'
+        else:
+            site_name_formal = site_name
+
+        return render(request, 'users/setup_password.html', {
+            'form': form,
+            'user': user,
+            'site_name': site_name,
+            'site_name_formal': site_name_formal,
+        })
+    else:
+        messages.error(request, 'Invalid or expired password setup link.')
+        return redirect('login')
 
 
 @login_required
@@ -264,7 +375,9 @@ def update_user(request, user_id):
 @require_http_methods(["POST"])
 def toggle_user_status(request, user_id):
     """Toggle user active status - managers only"""
+    print("Toggling user status for user ID:", user_id)
     if not request.user.can_manage_users():
+        print("Access denied for user:", request.user.username)
         return JsonResponse({'error': 'Access denied'}, status=403)
 
     # Prevent managers from toggling superuser status
@@ -277,6 +390,8 @@ def toggle_user_status(request, user_id):
     if user == request.user:
         return JsonResponse({'error': 'Cannot deactivate your own account'}, status=400)
 
+    # Toggle the active status
+    print(f"Toggling user status for {user.username} (current status: {'active' if user.is_active_user else 'inactive'})")
     user.is_active_user = not user.is_active_user
     user.save()
 
@@ -329,3 +444,43 @@ def profile(request):
         return redirect('profile')
 
     return render(request, 'users/profile.html')
+
+
+@login_required
+@require_http_methods(["POST"])
+def delete_user(request, user_id):
+    """Delete user - managers only"""
+    print("Deleting user ID:", user_id)
+    if not request.user.can_manage_users():
+        print("Access denied for user:", request.user.username)
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    # Prevent managers from deleting superusers
+    if request.user.is_superuser:
+        user = get_object_or_404(User, id=user_id)
+    else:
+        user = get_object_or_404(User, id=user_id, is_superuser=False)
+
+    # Don't allow managers to delete themselves
+    if user == request.user:
+        return JsonResponse({'error': 'Cannot delete your own account'}, status=400)
+
+    username = user.username
+    print(f"Deleting user: {username}")
+
+    log_user_activity(
+            request.user,
+            'user_deleted',
+            {
+                'deleted_user': username,
+                'user_type': user.user_type
+            },
+            request
+    )
+
+    user.delete()
+
+    return JsonResponse({
+        'success': True,
+        'message': f'User {username} deleted successfully'
+    })
