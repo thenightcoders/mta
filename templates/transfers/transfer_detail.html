@@ -1,19 +1,20 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}Transfer #{{ transfer.id }} - Money Transfer App{% endblock %}
+{% block title %}{% trans "Transfert #{{ transfer.id }} - Application de Transfert d'Argent" %}{% endblock %}
 
 {% block content %}
 <div class="row">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>
-                <i class="bi bi-arrow-left-right"></i> Transfer #{{ transfer.id }}
+                <i class="bi bi-arrow-left-right"></i> {% trans "Transfert" %} #{{ transfer.id }}
                 <span class="badge bg-{% if transfer.status == 'PENDING' %}warning{% elif transfer.status == 'VALIDATED' %}info{% elif transfer.status == 'COMPLETED' %}success{% else %}danger{% endif %} ms-2">
                     {{ transfer.get_status_display }}
                 </span>
             </h1>
             <a href="{% url 'transfer_list' %}" class="btn btn-secondary">
-                <i class="bi bi-arrow-left"></i> Back to Transfers
+                <i class="bi bi-arrow-left"></i> {% trans "Retour aux Transferts" %}
             </a>
         </div>
     </div>
@@ -24,27 +25,27 @@
         <!-- Transfer Details -->
         <div class="card mb-4">
             <div class="card-header">
-                <h5 class="mb-0">Transfer Details</h5>
+                <h5 class="mb-0">{% trans "Détails du Transfert" %}</h5>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">
-                        <p><strong>Beneficiary:</strong> {{ transfer.beneficiary_name }}</p>
-                        <p><strong>Phone:</strong> {{ transfer.beneficiary_phone }}</p>
-                        <p><strong>Method:</strong> {{ transfer.get_method_display }}</p>
+                        <p><strong>{% trans "Bénéficiaire" %}:</strong> {{ transfer.beneficiary_name }}</p>
+                        <p><strong>{% trans "Téléphone" %}:</strong> {{ transfer.beneficiary_phone }}</p>
+                        <p><strong>{% trans "Méthode" %}:</strong> {{ transfer.get_method_display }}</p>
                     </div>
                     <div class="col-md-6">
-                        <p><strong>Amount:</strong> {{ transfer.amount }} {{ transfer.sent_currency }}</p>
+                        <p><strong>{% trans "Montant" %}:</strong> {{ transfer.amount }} {{ transfer.sent_currency }}</p>
                         {% if transfer.sent_currency != transfer.received_currency %}
-                        <p><strong>Received:</strong> {{ transfer.received_currency }}</p>
+                        <p><strong>{% trans "Reçu" %}:</strong> {{ transfer.received_currency }}</p>
                         {% endif %}
-                        <p><strong>Agent:</strong> {{ transfer.agent.get_full_name|default:transfer.agent.username }}</p>
+                        <p><strong>{% trans "Agent" %}:</strong> {{ transfer.agent.get_full_name|default:transfer.agent.username }}</p>
                     </div>
                 </div>
 
                 {% if transfer.comment %}
                 <div class="mt-3">
-                    <strong>Comments:</strong>
+                    <strong>{% trans "Commentaires" %}:</strong>
                     <p class="text-muted">{{ transfer.comment }}</p>
                 </div>
                 {% endif %}
@@ -54,7 +55,7 @@
         <!-- Status Timeline -->
         <div class="card mb-4">
             <div class="card-header">
-                <h5 class="mb-0">Status Timeline</h5>
+                <h5 class="mb-0">{% trans "Chronologie du Statut" %}</h5>
             </div>
             <div class="card-body">
                 <div class="timeline">
@@ -62,9 +63,9 @@
                     <div class="timeline-item">
                         <div class="timeline-marker bg-primary"></div>
                         <div class="timeline-content">
-                            <h6>Transfer Created</h6>
-                            <p class="text-muted mb-1">{{ transfer.created_at|date:"F d, Y H:i" }}</p>
-                            <p class="mb-0">By: {{ transfer.agent.get_full_name|default:transfer.agent.username }}</p>
+                            <h6>{% trans "Transfert Créé" %}</h6>
+                            <p class="text-muted mb-1">{{ transfer.created_at|date:"d F Y H:i" }}</p>
+                            <p class="mb-0">{% trans "Par" %}: {{ transfer.agent.get_full_name|default:transfer.agent.username }}</p>
                         </div>
                     </div>
 
@@ -73,9 +74,9 @@
                     <div class="timeline-item">
                         <div class="timeline-marker bg-{% if transfer.status == 'VALIDATED' or transfer.status == 'COMPLETED' %}info{% else %}danger{% endif %}"></div>
                         <div class="timeline-content">
-                            <h6>Transfer {% if transfer.status == 'VALIDATED' or transfer.status == 'COMPLETED' %}Validated{% else %}Rejected{% endif %}</h6>
-                            <p class="text-muted mb-1">{{ transfer.validated_at|date:"F d, Y H:i" }}</p>
-                            <p class="mb-0">By: {{ transfer.validated_by.get_full_name|default:transfer.validated_by.username }}</p>
+                            <h6>{% trans "Transfert" %} {% if transfer.status == 'VALIDATED' or transfer.status == 'COMPLETED' %}{% trans "Validé" %}{% else %}{% trans "Rejeté" %}{% endif %}</h6>
+                            <p class="text-muted mb-1">{{ transfer.validated_at|date:"d F Y H:i" }}</p>
+                            <p class="mb-0">{% trans "Par" %}: {{ transfer.validated_by.get_full_name|default:transfer.validated_by.username }}</p>
                             {% if transfer.validation_comment %}
                             <p class="text-muted mt-1">{{ transfer.validation_comment }}</p>
                             {% endif %}
@@ -88,9 +89,9 @@
                     <div class="timeline-item">
                         <div class="timeline-marker bg-success"></div>
                         <div class="timeline-content">
-                            <h6>Transfer Completed</h6>
-                            <p class="text-muted mb-1">{{ transfer.executed_at|date:"F d, Y H:i" }}</p>
-                            <p class="mb-0">By: {{ transfer.executed_by.get_full_name|default:transfer.executed_by.username }}</p>
+                            <h6>{% trans "Transfert Terminé" %}</h6>
+                            <p class="text-muted mb-1">{{ transfer.executed_at|date:"d F Y H:i" }}</p>
+                            <p class="mb-0">{% trans "Par" %}: {{ transfer.executed_by.get_full_name|default:transfer.executed_by.username }}</p>
                             {% if transfer.execution_comment %}
                             <p class="text-muted mt-1">{{ transfer.execution_comment }}</p>
                             {% endif %}
@@ -105,20 +106,20 @@
         {% if commission %}
         <div class="card mb-4">
             <div class="card-header">
-                <h5 class="mb-0">Commission Details</h5>
+                <h5 class="mb-0">{% trans "Détails de la Commission" %}</h5>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-4">
-                        <p><strong>Total Commission:</strong></p>
+                        <p><strong>{% trans "Commission Totale" %}:</strong></p>
                         <h4 class="text-primary">{{ commission.total_commission }} {{ transfer.sent_currency }}</h4>
                     </div>
                     <div class="col-md-4">
-                        <p><strong>Agent Share:</strong></p>
+                        <p><strong>{% trans "Part de l'Agent" %}:</strong></p>
                         <h5 class="text-success">{{ commission.declaring_agent_amount }} {{ transfer.sent_currency }}</h5>
                     </div>
                     <div class="col-md-4">
-                        <p><strong>Manager Share:</strong></p>
+                        <p><strong>{% trans "Part du Manager" %}:</strong></p>
                         <h5 class="text-info">{{ commission.manager_amount }} {{ transfer.sent_currency }}</h5>
                     </div>
                 </div>
@@ -132,26 +133,26 @@
         {% if can_validate or can_execute %}
         <div class="card mb-4">
             <div class="card-header">
-                <h5 class="mb-0">Actions</h5>
+                <h5 class="mb-0">{% trans "Actions" %}</h5>
             </div>
             <div class="card-body">
                 {% if can_validate %}
                 <div class="mb-3">
-                    <p class="text-muted small">Transfer Status: <strong>{{ transfer.get_status_display }}</strong></p>
+                    <p class="text-muted small">{% trans "Statut du Transfert" %}: <strong>{{ transfer.get_status_display }}</strong></p>
                     <button type="button" class="btn btn-success w-100 mb-2" onclick="showValidationModal('validate')">
-                        <i class="bi bi-check-circle"></i> Validate Transfer
+                        <i class="bi bi-check-circle"></i> {% trans "Valider le Transfert" %}
                     </button>
                     <button type="button" class="btn btn-danger w-100" onclick="showValidationModal('reject')">
-                        <i class="bi bi-x-circle"></i> Reject Transfer
+                        <i class="bi bi-x-circle"></i> {% trans "Rejeter le Transfert" %}
                     </button>
                 </div>
                 {% endif %}
 
                 {% if can_execute %}
                 <div class="mb-3">
-                    <p class="text-muted small">Transfer Status: <strong>{{ transfer.get_status_display }}</strong></p>
+                    <p class="text-muted small">{% trans "Statut du Transfert" %}: <strong>{{ transfer.get_status_display }}</strong></p>
                     <button type="button" class="btn btn-primary w-100" onclick="showExecutionModal()">
-                        <i class="bi bi-check-all"></i> Complete Transfer
+                        <i class="bi bi-check-all"></i> {% trans "Terminer le Transfert" %}
                     </button>
                 </div>
                 {% endif %}
@@ -160,7 +161,7 @@
                 {% if user.is_superuser %}
                 <div class="mt-3 p-2 bg-light rounded">
                     <small class="text-muted">
-                        Debug: Status={{ transfer.status }}, can_validate={{ can_validate }}, can_execute={{ can_execute }}
+                        {% trans "Debug" %}: {% trans "Statut" %}={{ transfer.status }}, can_validate={{ can_validate }}, can_execute={{ can_execute }}
                     </small>
                 </div>
                 {% endif %}
@@ -171,13 +172,13 @@
         <!-- Transfer Info -->
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">Transfer Information</h5>
+                <h5 class="mb-0">{% trans "Informations sur le Transfert" %}</h5>
             </div>
             <div class="card-body">
-                <p><strong>ID:</strong> #{{ transfer.id }}</p>
-                <p><strong>Created:</strong> {{ transfer.created_at|date:"F d, Y H:i" }}</p>
-                <p><strong>Updated:</strong> {{ transfer.updated_at|date:"F d, Y H:i" }}</p>
-                <p><strong>Status:</strong>
+                <p><strong>{% trans "ID" %}:</strong> #{{ transfer.id }}</p>
+                <p><strong>{% trans "Créé" %}:</strong> {{ transfer.created_at|date:"d F Y H:i" }}</p>
+                <p><strong>{% trans "Mis à jour" %}:</strong> {{ transfer.updated_at|date:"d F Y H:i" }}</p>
+                <p><strong>{% trans "Statut" %}:</strong>
                     <span class="badge bg-{% if transfer.status == 'PENDING' %}warning{% elif transfer.status == 'VALIDATED' %}info{% elif transfer.status == 'COMPLETED' %}success{% else %}danger{% endif %}">
                         {{ transfer.get_status_display }}
                     </span>
@@ -192,7 +193,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="validationModalTitle">Validate Transfer</h5>
+                <h5 class="modal-title" id="validationModalTitle">{% trans "Valider le Transfert" %}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -200,15 +201,15 @@
                     {% csrf_token %}
                     <input type="hidden" id="validationAction" name="action" value="">
                     <div class="mb-3">
-                        <label for="validationComment" class="form-label">Comment (optional)</label>
+                        <label for="validationComment" class="form-label">{% trans "Commentaire (facultatif)" %}</label>
                         <textarea class="form-control" id="validationComment" name="comment" rows="3"
-                                placeholder="Add a comment about this decision..."></textarea>
+                                placeholder="{% trans "Ajouter un commentaire concernant cette décision..." %}"></textarea>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn" id="validationSubmitBtn" onclick="submitValidation()">Confirm</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Annuler" %}</button>
+                <button type="button" class="btn" id="validationSubmitBtn" onclick="submitValidation()">{% trans "Confirmer" %}</button>
             </div>
         </div>
     </div>
@@ -219,23 +220,23 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Complete Transfer</h5>
+                <h5 class="modal-title">{% trans "Terminer le Transfert" %}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <form id="executionForm">
                     {% csrf_token %}
                     <div class="mb-3">
-                        <label for="executionComment" class="form-label">Completion Comment (optional)</label>
+                        <label for="executionComment" class="form-label">{% trans "Commentaire de Finalisation (facultatif)" %}</label>
                         <textarea class="form-control" id="executionComment" name="comment" rows="3"
-                                placeholder="Add details about the transfer completion..."></textarea>
+                                placeholder="{% trans "Ajouter des détails sur la finalisation du transfert..." %}"></textarea>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Annuler" %}</button>
                 <button type="button" class="btn btn-primary" onclick="submitExecution()">
-                    <i class="bi bi-check-all"></i> Complete Transfer
+                    <i class="bi bi-check-all"></i> {% trans "Terminer le Transfert" %}
                 </button>
             </div>
         </div>
@@ -289,12 +290,12 @@ function showValidationModal(action) {
     const submitBtn = document.getElementById('validationSubmitBtn');
 
     if (action === 'validate') {
-        title.textContent = 'Validate Transfer';
-        submitBtn.textContent = 'Validate';
+        title.textContent = '{% trans "Valider le Transfert" %}';
+        submitBtn.textContent = '{% trans "Valider" %}';
         submitBtn.className = 'btn btn-success';
     } else {
-        title.textContent = 'Reject Transfer';
-        submitBtn.textContent = 'Reject';
+        title.textContent = '{% trans "Rejeter le Transfert" %}';
+        submitBtn.textContent = '{% trans "Rejeter" %}';
         submitBtn.className = 'btn btn-danger';
     }
 
@@ -332,12 +333,12 @@ function submitValidation() {
             modal.hide();
             location.reload();
         } else {
-            alert('Error: ' + (data.error || 'Unknown error'));
+            alert('{% trans "Erreur" %}: ' + (data.error || '{% trans "Erreur inconnue" %}'));
         }
     })
     .catch(error => {
         console.error('Validation error:', error);
-        alert('Error: ' + error);
+        alert('{% trans "Erreur" %}: ' + error);
     });
 }
 
@@ -366,12 +367,12 @@ function submitExecution() {
             modal.hide();
             location.reload();
         } else {
-            alert('Error: ' + (data.error || 'Unknown error'));
+            alert('{% trans "Erreur" %}: ' + (data.error || '{% trans "Erreur inconnue" %}'));
         }
     })
     .catch(error => {
         console.error('Execution error:', error);
-        alert('Error: ' + error);
+        alert('{% trans "Erreur" %}: ' + error);
     });
 }
 </script>

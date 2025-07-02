@@ -1,58 +1,342 @@
 {% extends 'base.html' %}
-{% block content %}
+{% load i18n %}
 
-<form method="post" class="border p-3 rounded bg-light">
-    {% csrf_token %}
-  
-    <div class="mb-3">
-      <label>Agent (facultatif)</label>
-      <select name="agent" class="form-select">
-        <option value="">-- Tous les agents --</option>
-        {% for agent in agents %}
-          <option value="{{ agent.id }}">{{ agent.username }}</option>
-        {% endfor %}
-      </select>
+{% block title %}{% trans "Gérer Suppressions Commission" %} - {% trans "Application de Transfert d'Argent" %}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-10">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>
+                <i class="bi bi-trash"></i> {% trans "Gérer Suppressions Commission" %}
+            </h2>
+            <a href="{% url 'commissions_overview' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> {% trans "Retour aux Commissions" %}
+            </a>
+        </div>
     </div>
-  
-    <div class="mb-3">
-      <label>Période à cibler :</label>
-      <select name="mode" class="form-select" required>
-        <option value="">-- Choisir --</option>
-        <option value="day">Jour spécifique</option>
-        <option value="week">Semaine (via date)</option>
-        <option value="month">Mois</option>
-        <option value="year">Année</option>
-      </select>
+</div>
+
+<!-- Warning Alert -->
+<div class="row justify-content-center mb-4">
+    <div class="col-10">
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <strong>{% trans "Attention" %} :</strong> {% trans "Cette action est irréversible. Les commissions supprimées ne peuvent pas être récupérées. Utilisez cette fonctionnalité avec précaution." %}
+        </div>
     </div>
-  
-    <div class="mb-3">
-      <label>Date (pour jour ou semaine)</label>
-      <input type="date" name="date" class="form-control">
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-funnel"></i> {% trans "Critères de Suppression" %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" id="deletion-form" novalidate>
+                    {% csrf_token %}
+
+                    <!-- Agent Selection -->
+                    <div class="mb-4">
+                        <h6>{% trans "Filtrer par Agent" %}</h6>
+                        <div class="mb-3">
+                            <label for="agent" class="form-label">{% trans "Agent" %}</label>
+                            <select name="agent" id="agent" class="form-select">
+                                <option value="">{% trans "Tous les agents" %}</option>
+                                {% for agent in agents %}
+                                    <option value="{{ agent.id }}">{{ agent.username }} - {{ agent.get_full_name|default:agent.username }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">{% trans "Laisser vide pour supprimer les commissions de tous les agents" %}</div>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Period Selection -->
+                    <div class="mb-4">
+                        <h6>{% trans "Filtrer par Période" %}</h6>
+                        <div class="mb-3">
+                            <label for="mode" class="form-label">{% trans "Type de Période" %}</label>
+                            <select name="mode" id="mode" class="form-select">
+                                <option value="">{% trans "Choisir le type de période" %}</option>
+                                <option value="day">{% trans "Jour spécifique" %}</option>
+                                <option value="week">{% trans "Semaine (via date)" %}</option>
+                                <option value="month">{% trans "Mois complet" %}</option>
+                                <option value="year">{% trans "Année complète" %}</option>
+                            </select>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="date" class="form-label">{% trans "Date" %}</label>
+                                    <input type="date" name="date" id="date" class="form-control">
+                                    <div class="form-text">{% trans "Pour jour spécifique ou semaine contenant cette date" %}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="month" class="form-label">{% trans "Mois" %}</label>
+                                    <input type="month" name="month" id="month" class="form-control">
+                                    <div class="form-text">{% trans "Format YYYY-MM pour mois complet" %}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="year" class="form-label">{% trans "Année" %}</label>
+                            <input type="number" name="year" id="year" class="form-control" min="2020" max="2030" placeholder="{% trans 'ex: 2024' %}">
+                            <div class="form-text">{% trans "Pour supprimer toutes les commissions d'une année" %}</div>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Specific Commission -->
+                    <div class="mb-4">
+                        <h6>{% trans "Commission Spécifique" %}</h6>
+                        <div class="mb-3">
+                            <label for="commission_id" class="form-label">{% trans "ID Commission" %}</label>
+                            <input type="number" name="commission_id" id="commission_id" class="form-control" min="1" placeholder="{% trans 'ex: 154' %}">
+                            <div class="form-text">{% trans "Supprimer une commission spécifique par son ID unique" %}</div>
+                        </div>
+                    </div>
+
+                    <!-- Preview Section -->
+                    <div class="alert alert-warning" id="preview-section" style="display: none;">
+                        <h6>{% trans "Aperçu de la Suppression" %}</h6>
+                        <div id="preview-content"></div>
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" id="confirm-deletion">
+                            <label class="form-check-label" for="confirm-deletion">
+                                {% trans "J'ai lu et compris les conséquences de cette action" %}
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'commissions_overview' %}" class="btn btn-secondary">{% trans "Annuler" %}</a>
+                        <button type="button" class="btn btn-warning" id="preview-btn">
+                            <i class="bi bi-search"></i> {% trans "Prévisualiser" %}
+                        </button>
+                        <button type="submit" class="btn btn-danger" id="delete-btn" disabled>
+                            <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                            <i class="bi bi-trash"></i> {% trans "Supprimer Définitivement" %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
-  
-    <div class="mb-3">
-      <label>Mois (format YYYY-MM)</label>
-      <input type="month" name="month" class="form-control">
+</div>
+
+<!-- Safety Guidelines -->
+<div class="row justify-content-center mt-4">
+    <div class="col-10">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-shield-exclamation"></i> {% trans "Consignes de Sécurité" %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>{% trans "Avant de supprimer" %} :</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-check-circle text-warning"></i> {% trans "Vérifiez les critères de sélection" %}</li>
+                            <li><i class="bi bi-check-circle text-warning"></i> {% trans "Utilisez l'aperçu pour confirmer" %}</li>
+                            <li><i class="bi bi-check-circle text-warning"></i> {% trans "Assurez-vous de la nécessité" %}</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>{% trans "Cas d'usage typiques" %} :</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-arrow-right text-info"></i> {% trans "Correction d'erreurs de calcul" %}</li>
+                            <li><i class="bi bi-arrow-right text-info"></i> {% trans "Recalcul de période spécifique" %}</li>
+                            <li><i class="bi bi-arrow-right text-info"></i> {% trans "Nettoyage de données de test" %}</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-  
-    <div class="mb-3">
-      <label>Année</label>
-      <input type="number" name="year" class="form-control" placeholder="ex : 2024">
-    </div>
-  
-    <hr>
-  
-    <div class="mb-3">
-      <label>ID d'une commission spécifique</label>
-      <input type="number" name="commission_id" class="form-control" placeholder="ex : 154">
-    </div>
-  
-    <div class="d-grid">
-      <button type="submit" class="btn btn-danger"
-              onclick="return confirm('Confirmer la suppression ?')">
-        Supprimer
-      </button>
-    </div>
-  </form>
-  
-  {% endblock %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('deletion-form');
+    const previewBtn = document.getElementById('preview-btn');
+    const deleteBtn = document.getElementById('delete-btn');
+    const previewSection = document.getElementById('preview-section');
+    const previewContent = document.getElementById('preview-content');
+    const confirmCheckbox = document.getElementById('confirm-deletion');
+    const spinner = deleteBtn.querySelector('.spinner-border');
+
+    // Preview functionality
+    previewBtn.addEventListener('click', function() {
+        const formData = new FormData(form);
+        const criteria = [];
+
+        // Build criteria description
+        if (formData.get('agent')) {
+            const agentSelect = document.getElementById('agent');
+            const agentName = agentSelect.options[agentSelect.selectedIndex].text;
+            criteria.push(`{% trans "Agent" %}: ${agentName}`);
+        }
+
+        if (formData.get('commission_id')) {
+            criteria.push(`{% trans "Commission ID" %}: #${formData.get('commission_id')}`);
+        }
+
+        if (formData.get('mode')) {
+            const mode = formData.get('mode');
+            let periodDesc = '';
+
+            switch(mode) {
+                case 'day':
+                    if (formData.get('date')) {
+                        periodDesc = `{% trans "Jour" %}: ${formData.get('date')}`;
+                    }
+                    break;
+                case 'week':
+                    if (formData.get('date')) {
+                        periodDesc = `{% trans "Semaine contenant" %}: ${formData.get('date')}`;
+                    }
+                    break;
+                case 'month':
+                    if (formData.get('month')) {
+                        periodDesc = `{% trans "Mois" %}: ${formData.get('month')}`;
+                    }
+                    break;
+                case 'year':
+                    if (formData.get('year')) {
+                        periodDesc = `{% trans "Année" %}: ${formData.get('year')}`;
+                    }
+                    break;
+            }
+
+            if (periodDesc) {
+                criteria.push(periodDesc);
+            }
+        }
+
+        if (criteria.length === 0) {
+            criteria.push('{% trans "TOUTES LES COMMISSIONS" %}');
+        }
+
+        previewContent.innerHTML = `
+            <strong>{% trans "Critères de suppression" %} :</strong><br>
+            ${criteria.join('<br>')}
+            <br><br>
+            <div class="text-danger">
+                <strong>{% trans "ATTENTION" %} :</strong> {% trans "Cette action supprimera définitivement toutes les commissions correspondant à ces critères." %}
+            </div>
+        `;
+
+        previewSection.style.display = 'block';
+        confirmCheckbox.checked = false;
+        deleteBtn.disabled = true;
+    });
+
+    // Enable delete button only when confirmed
+    confirmCheckbox.addEventListener('change', function() {
+        deleteBtn.disabled = !this.checked;
+    });
+
+    // Form submission with additional confirmation
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        if (!confirmCheckbox.checked) {
+            alert('{% trans "Veuillez confirmer que vous avez lu et compris les conséquences de cette action." %}');
+            return;
+        }
+
+        const finalConfirm = confirm('{% trans "DERNIÈRE CONFIRMATION : Êtes-vous absolument sûr de vouloir supprimer ces commissions ? Cette action est IRRÉVERSIBLE." %}');
+
+        if (finalConfirm) {
+            // Show loading state
+            deleteBtn.disabled = true;
+            spinner.classList.remove('d-none');
+
+            // Submit form
+            form.submit();
+        }
+    });
+
+    // Form validation and UX improvements
+    const inputs = form.querySelectorAll('input, select');
+    inputs.forEach(input => {
+        input.addEventListener('change', function() {
+            // Hide preview when form changes
+            previewSection.style.display = 'none';
+            deleteBtn.disabled = true;
+            confirmCheckbox.checked = false;
+        });
+    });
+
+    // Mode-based field enablement
+    const modeSelect = document.getElementById('mode');
+    const dateInput = document.getElementById('date');
+    const monthInput = document.getElementById('month');
+    const yearInput = document.getElementById('year');
+
+    modeSelect.addEventListener('change', function() {
+        const mode = this.value;
+
+        // Reset all fields
+        dateInput.disabled = true;
+        monthInput.disabled = true;
+        yearInput.disabled = true;
+
+        // Enable relevant fields
+        switch(mode) {
+            case 'day':
+            case 'week':
+                dateInput.disabled = false;
+                break;
+            case 'month':
+                monthInput.disabled = false;
+                break;
+            case 'year':
+                yearInput.disabled = false;
+                break;
+        }
+    });
+
+    // Initial state
+    modeSelect.dispatchEvent(new Event('change'));
+});
+</script>
+
+<style>
+.form-control:disabled {
+    background-color: #f8f9fa;
+    opacity: 0.6;
+}
+
+.alert-danger {
+    border-left: 4px solid #dc3545;
+}
+
+.alert-warning {
+    border-left: 4px solid #ffc107;
+}
+
+#preview-section {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+</style>
+{% endblock %}

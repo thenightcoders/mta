@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}Commission Configurations - Money Transfer App{% endblock %}
+{% block title %}{% trans "Configurations Commission" %} - {% trans "Application de Transfert d'Argent" %}{% endblock %}
 
 {% block content %}
 {% csrf_token %}
@@ -9,14 +10,15 @@
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>
-                <i class="bi bi-percent"></i> Commission Configurations
+                <i class="bi bi-percent"></i> {% trans "Configurations Commission" %}
             </h1>
             <a href="{% url 'create_commission_config' %}" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i> New Configuration
+                <i class="bi bi-plus-circle"></i> {% trans "Nouvelle Configuration" %}
             </a>
         </div>
     </div>
 </div>
+
 <div class="row">
     <div class="col-12">
         <div class="card">
@@ -26,13 +28,13 @@
                         <table class="table table-hover">
                             <thead>
                                 <tr>
-                                    <th>Currency</th>
-                                    <th>Amount Range</th>
-                                    <th>Commission Rate</th>
-                                    <th>Agent Share</th>
-                                    <th>Manager Share</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
+                                    <th>{% trans "Devise" %}</th>
+                                    <th>{% trans "Plage de Montant" %}</th>
+                                    <th>{% trans "Taux Commission" %}</th>
+                                    <th>{% trans "Part Agent" %}</th>
+                                    <th>{% trans "Part Gestionnaire" %}</th>
+                                    <th>{% trans "Statut" %}</th>
+                                    <th>{% trans "Actions" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -55,7 +57,7 @@
                                     </td>
                                     <td>
                                         <span class="badge bg-{% if config.active %}success{% else %}secondary{% endif %}">
-                                            {% if config.active %}Active{% else %}Inactive{% endif %}
+                                            {% if config.active %}{% trans "Actif" %}{% else %}{% trans "Inactif" %}{% endif %}
                                         </span>
                                     </td>
                                     <td>
@@ -63,7 +65,7 @@
                                             <i class="bi bi-pencil"></i>
                                         </button>
                                         <button class="btn btn-sm btn-{% if config.active %}danger{% else %}success{% endif %}" onclick="toggleConfig({{ config.id }}, {{ config.active|yesno:'true,false' }})">
-                                            {% if config.active %}Disable{% else %}Enable{% endif %}
+                                            {% if config.active %}{% trans "Désactiver" %}{% else %}{% trans "Activer" %}{% endif %}
                                         </button>
                                     </td>
                                 </tr>
@@ -74,10 +76,10 @@
                 {% else %}
                     <div class="text-center py-5">
                         <i class="bi bi-percent display-1 text-muted"></i>
-                        <h4 class="mt-3">No commission configurations</h4>
-                        <p class="text-muted">Create your first commission configuration.</p>
+                        <h4 class="mt-3">{% trans "Aucune configuration de commission" %}</h4>
+                        <p class="text-muted">{% trans "Créez votre première configuration de commission." %}</p>
                         <a href="{% url 'create_commission_config' %}" class="btn btn-primary">
-                            <i class="bi bi-plus-circle"></i> Create Configuration
+                            <i class="bi bi-plus-circle"></i> {% trans "Créer Configuration" %}
                         </a>
                     </div>
                 {% endif %}
@@ -85,6 +87,7 @@
         </div>
     </div>
 </div>
+
 <!-- Commission Calculator -->
 {% if configs %}
 <div class="row mt-4">
@@ -92,17 +95,17 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="bi bi-calculator"></i> Commission Calculator
+                    <i class="bi bi-calculator"></i> {% trans "Calculateur de Commission" %}
                 </h5>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-3">
-                        <label class="form-label">Transfer Amount</label>
+                        <label class="form-label">{% trans "Montant Transfert" %}</label>
                         <input type="number" class="form-control" id="calcAmount" value="100" min="0" step="0.01" onchange="calculateCommission()">
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">Currency</label>
+                        <label class="form-label">{% trans "Devise" %}</label>
                         <select class="form-select" id="calcCurrency" onchange="calculateCommission()">
                             <option value="EUR">EUR</option>
                             <option value="BIF">BIF</option>
@@ -110,9 +113,9 @@
                         </select>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Commission Breakdown</label>
+                        <label class="form-label">{% trans "Répartition Commission" %}</label>
                         <div id="commissionResult" class="p-3 bg-light rounded">
-                            <em class="text-muted">Enter an amount to see commission calculation</em>
+                            <em class="text-muted">{% trans "Entrez un montant pour voir le calcul de commission" %}</em>
                         </div>
                     </div>
                 </div>
@@ -126,10 +129,10 @@
 <div class="row mt-4">
     <div class="col-12">
         <div class="alert alert-info">
-            <h6 class="mb-2"><i class="bi bi-info-circle"></i> How Commission Works</h6>
-            <p class="mb-1"><strong>Commission Rate:</strong> Percentage taken from transfer amount (e.g. 3% of 100 EUR = 3 EUR total commission)</p>
-            <p class="mb-1"><strong>Agent Share:</strong> Percentage of commission going to agent (e.g. 40% of 3 EUR = 1.20 EUR to agent)</p>
-            <p class="mb-0"><strong>Manager Share:</strong> Remaining commission goes to manager (e.g. 60% of 3 EUR = 1.80 EUR to manager)</p>
+            <h6 class="mb-2"><i class="bi bi-info-circle"></i> {% trans "Comment Fonctionne la Commission" %}</h6>
+            <p class="mb-1"><strong>{% trans "Taux de Commission" %} :</strong> {% trans "Pourcentage prélevé sur le montant du transfert (ex: 3% de 100 EUR = 3 EUR de commission totale)" %}</p>
+            <p class="mb-1"><strong>{% trans "Part Agent" %} :</strong> {% trans "Pourcentage de commission allant à l'agent (ex: 40% de 3 EUR = 1,20 EUR à l'agent)" %}</p>
+            <p class="mb-0"><strong>{% trans "Part Gestionnaire" %} :</strong> {% trans "Le reste de la commission va au gestionnaire (ex: 60% de 3 EUR = 1,80 EUR au gestionnaire)" %}</p>
         </div>
     </div>
 </div>
@@ -139,7 +142,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Edit Commission Configuration</h5>
+                <h5 class="modal-title">{% trans "Modifier Configuration Commission" %}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -149,7 +152,7 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label">Currency</label>
+                                <label class="form-label">{% trans "Devise" %}</label>
                                 <input type="text" class="form-control" id="editCurrency" readonly>
                             </div>
                         </div>
@@ -157,7 +160,7 @@
                             <div class="mb-3">
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" id="editActive">
-                                    <label class="form-check-label" for="editActive">Active</label>
+                                    <label class="form-check-label" for="editActive">{% trans "Actif" %}</label>
                                 </div>
                             </div>
                         </div>
@@ -166,13 +169,13 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label">Min Amount</label>
+                                <label class="form-label">{% trans "Montant Min" %}</label>
                                 <input type="number" class="form-control" id="editMinAmount" step="0.01">
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label">Max Amount</label>
+                                <label class="form-label">{% trans "Montant Max" %}</label>
                                 <input type="number" class="form-control" id="editMaxAmount" step="0.01">
                             </div>
                         </div>
@@ -181,13 +184,13 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label">Commission Rate (%)</label>
+                                <label class="form-label">{% trans "Taux Commission" %} (%)</label>
                                 <input type="number" class="form-control" id="editCommissionRate" step="0.01">
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label">Agent Share (%)</label>
+                                <label class="form-label">{% trans "Part Agent" %} (%)</label>
                                 <input type="number" class="form-control" id="editAgentShare" step="0.01">
                             </div>
                         </div>
@@ -195,8 +198,8 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveConfig()">Save Changes</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Annuler" %}</button>
+                <button type="button" class="btn btn-primary" onclick="saveConfig()">{% trans "Sauvegarder Modifications" %}</button>
             </div>
         </div>
     </div>
@@ -208,9 +211,9 @@
 function toggleConfig(configId, isActive) {
     console.log('toggleConfig called:', configId, isActive);
 
-    const action = isActive ? 'disable' : 'enable';
+    const action = isActive ? '{% trans "désactiver" %}' : '{% trans "activer" %}';
 
-    if (confirm(`Are you sure you want to ${action} this commission configuration?`)) {
+    if (confirm(`{% trans "Êtes-vous sûr de vouloir" %} ${action} {% trans "cette configuration de commission ?" %}`)) {
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
         fetch(`/transfers/commissions/${configId}/toggle/`, {
@@ -229,12 +232,12 @@ function toggleConfig(configId, isActive) {
             if (data.success) {
                 location.reload();
             } else {
-                alert('Error: ' + data.error);
+                alert('{% trans "Erreur" %}: ' + data.error);
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Error: ' + error);
+            alert('{% trans "Erreur" %}: ' + error);
         });
     }
 }
@@ -296,12 +299,12 @@ function saveConfig() {
         if (data.success) {
             location.reload();
         } else {
-            alert('Error: ' + data.error);
+            alert('{% trans "Erreur" %}: ' + data.error);
         }
     })
     .catch(error => {
         console.error('Update error:', error);
-        alert('Error: ' + error);
+        alert('{% trans "Erreur" %}: ' + error);
     });
 }
 
@@ -330,7 +333,7 @@ function calculateCommission() {
     console.log('Amount:', amount, 'Currency:', currency);
 
     if (amount <= 0) {
-        resultDiv.innerHTML = '<em class="text-muted">Enter an amount to see commission calculation</em>';
+        resultDiv.innerHTML = '<em class="text-muted">{% trans "Entrez un montant pour voir le calcul de commission" %}</em>';
         return;
     }
 
@@ -354,24 +357,24 @@ function calculateCommission() {
         resultDiv.innerHTML =
             '<div class="row">' +
                 '<div class="col-6 col-md-3">' +
-                    '<small class="text-muted">Total Commission:</small>' +
+                    '<small class="text-muted">{% trans "Commission Totale" %}:</small>' +
                     '<div class="fw-bold">' + totalCommission.toFixed(2) + ' ' + currency + '</div>' +
                 '</div>' +
                 '<div class="col-6 col-md-3">' +
-                    '<small class="text-muted">Agent Gets:</small>' +
+                    '<small class="text-muted">{% trans "Agent Reçoit" %}:</small>' +
                     '<div class="fw-bold text-success">' + agentAmount.toFixed(2) + ' ' + currency + '</div>' +
                 '</div>' +
                 '<div class="col-6 col-md-3">' +
-                    '<small class="text-muted">Manager Gets:</small>' +
+                    '<small class="text-muted">{% trans "Gestionnaire Reçoit" %}:</small>' +
                     '<div class="fw-bold text-info">' + managerAmount.toFixed(2) + ' ' + currency + '</div>' +
                 '</div>' +
                 '<div class="col-6 col-md-3">' +
-                    '<small class="text-muted">Rate Used:</small>' +
+                    '<small class="text-muted">{% trans "Taux Utilisé" %}:</small>' +
                     '<div class="fw-bold">' + config.commissionRate + '%</div>' +
                 '</div>' +
             '</div>';
     } else {
-        resultDiv.innerHTML = '<div class="text-warning">No commission configuration found for ' + amount + ' ' + currency + '</div>';
+        resultDiv.innerHTML = '<div class="text-warning">{% trans "Aucune configuration de commission trouvée pour" %} ' + amount + ' ' + currency + '</div>';
     }
 }
 

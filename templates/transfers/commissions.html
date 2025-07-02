@@ -1,109 +1,280 @@
 {% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Aperçu des Commissions" %} - {% trans "Application de Transfert d'Argent" %}{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-
-  <h2 class="mb-3">📊 Tableau des Commissions</h2>
-
-  {% if is_manager %}
-    <div class="d-flex justify-content-end mb-3">
-      <a href="{% url 'clear_commissions' %}" class="btn btn-outline-danger btn-sm">
-        🧹 Gérer les suppressions de commissions
-      </a>
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="bi bi-cash-stack"></i> {% trans "Aperçu des Commissions" %}
+            </h1>
+            <div>
+                {% if is_manager %}
+                <a href="{% url 'clear_commissions' %}" class="btn btn-outline-danger me-2">
+                    <i class="bi bi-trash"></i> {% trans "Gérer Suppressions" %}
+                </a>
+                {% endif %}
+                <a href="{% url 'commission_config_list' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-gear"></i> {% trans "Configurations" %}
+                </a>
+            </div>
+        </div>
     </div>
-  {% endif %}
-
-
-  <form method="get" class="mb-4">
-    <label for="period" class="form-label">Afficher par période :</label>
-    <select name="period" id="period" onchange="this.form.submit()" class="form-select w-auto d-inline-block">
-      <option value="day" {% if period == 'day' %}selected{% endif %}>Jour</option>
-      <option value="week" {% if period == 'week' %}selected{% endif %}>Semaine</option>
-      <option value="month" {% if period == 'month' %}selected{% endif %}>Mois</option>
-      <option value="year" {% if period == 'year' %}selected{% endif %}>Année</option>
-    </select>
-  </form>
-
-  {% if is_manager %}
-    <h4 class="mt-4">🧮 Total </h4>
-    <ul class="list-group mb-3">
-      {% for item in global_commissions %}
-        <li class="list-group-item d-flex justify-content-between">
-          <span>{{ item.period|date:"F Y" }}</span>
-          <span>
-            Agent : <strong>{{ item.total_agent }} € </strong> </br>
-            Manager : <strong>{{ item.total_manager }} € </strong>
-          </span>
-        </li>
-      {% endfor %}
-    </ul>
-
-    <h4>📌 Tous les commissions en € </h4>
-    <table class="table table-sm table-bordered">
-      <thead>
-        <tr>
-          <th>Qui?</th><th>Son gain total</th><th>part des managers</th><th>Total Brut</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for agent in per_agent_totals %}
-        <tr>
-          <td>{{ agent.agent__username }}</td>
-          <td>{{ agent.total }}</td>
-          <td>{{ agent.total_manager }}</td>
-          <td>{{ agent.total_commissions }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  {% else %}
-    <h4 class="mb-3">Mes Commissions par {{ period_label }}</h4>
-    <ul class="list-group mb-4">
-      {% for item in commissions %}
-        <li class="list-group-item d-flex justify-content-between">
-          {{ item.period|date:"d m Y" }} :
-          <strong>{{ item.total }}</strong>
-        </li>
-      {% empty %}
-        <li class="list-group-item">Aucune commission trouvée.</li>
-      {% endfor %}
-    </ul>
-  {% endif %}
-
-  <h4 class="mt-4">🔍 Détails des Commissions</h4>
-  <table class="table table-hover table-bordered">
-    <thead>
-      <tr>
-        {% if is_manager %}<th>Agent</th>{% endif %}
-        <th>Date</th>
-        <th>Tranfert</th>
-        <th>Montant du transfert</th>
-        <th>Commission</th>
-        <th>Manager</th>
-        <th>identifiant unique</th>
-        {% comment %} <th>Config</th> {% endcomment %}
-      </tr>
-    </thead>
-    <tbody>
-      {% for c in detailed_commissions %}
-      <tr>
-        {% if is_manager %}<td>{{ c.agent.username }}</td>{% endif %}
-        <td>{{ c.created_at|date:"d/m/Y H:i" }}</td>
-        <td><a href="{% url 'transfer_detail' transfer_id=c.transfer.id %}">voir le transfert</a></td>
-        <td>{{ c.transfer.amount }} {{ c.transfer.sent_currency }}</td>
-        <td>{{ c.declaring_agent_amount }}</td>
-        <td>{{ c.transfer.validated_by.username }}</td>
-        <td>{{ c.id }}</td>
-        {% comment %} <td>
-          {% if c.config_used %}
-            <a href="{% url 'toggle_commission_config' config_id=c.config_used.id %}" target="_blank">#{{ c.config_used.id }}</a>
-          {% else %}
-            -
-          {% endif %}
-        </td> {% endcomment %}
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-
 </div>
+
+<!-- Period Filter -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-calendar-range"></i> {% trans "Filtres par Période" %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-4">
+                        <label for="period" class="form-label">{% trans "Afficher par période" %}</label>
+                        <select name="period" id="period" onchange="this.form.submit()" class="form-select">
+                            <option value="day" {% if period == 'day' %}selected{% endif %}>{% trans "Jour" %}</option>
+                            <option value="week" {% if period == 'week' %}selected{% endif %}>{% trans "Semaine" %}</option>
+                            <option value="month" {% if period == 'month' %}selected{% endif %}>{% trans "Mois" %}</option>
+                            <option value="year" {% if period == 'year' %}selected{% endif %}>{% trans "Année" %}</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if is_manager %}
+<!-- Manager Overview -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-graph-up"></i> {% trans "Totaux par Période" %}
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if global_commissions %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>{% trans "Période" %}</th>
+                                    <th>{% trans "Agents" %}</th>
+                                    <th>{% trans "Gestionnaires" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in global_commissions %}
+                                <tr>
+                                    <td>{{ item.period|date:"F Y" }}</td>
+                                    <td class="text-success fw-bold">{{ item.total_agent|floatformat:2 }} €</td>
+                                    <td class="text-info fw-bold">{{ item.total_manager|floatformat:2 }} €</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">{% trans "Aucune commission pour cette période" %}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-people"></i> {% trans "Totaux par Agent" %}
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if per_agent_totals %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>{% trans "Agent" %}</th>
+                                    <th>{% trans "Gain Agent" %}</th>
+                                    <th>{% trans "Part Gestionnaire" %}</th>
+                                    <th>{% trans "Total Brut" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for agent in per_agent_totals %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-primary">{{ agent.agent__username }}</span>
+                                    </td>
+                                    <td class="text-success fw-bold">{{ agent.total|floatformat:2 }} €</td>
+                                    <td class="text-info fw-bold">{{ agent.total_manager|floatformat:2 }} €</td>
+                                    <td class="fw-bold">{{ agent.total_commissions|floatformat:2 }} €</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">{% trans "Aucune commission d'agent pour cette période" %}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<!-- Agent Overview -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-person-check"></i> {% trans "Mes Commissions par" %} {{ period_label }}
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if commissions %}
+                    <div class="row">
+                        {% for item in commissions %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card border">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title text-muted">{{ item.period|date:"d M Y" }}</h6>
+                                    <h3 class="text-success">{{ item.total|floatformat:2 }} €</h3>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-cash-coin display-4 text-muted"></i>
+                        <h5 class="mt-3">{% trans "Aucune commission trouvée" %}</h5>
+                        <p class="text-muted">{% trans "Vous n'avez pas encore gagné de commissions pour cette période." %}</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Detailed Commissions -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-list-ul"></i> {% trans "Détails des Commissions" %}
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if detailed_commissions %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    {% if is_manager %}
+                                    <th>{% trans "Agent" %}</th>
+                                    {% endif %}
+                                    <th>{% trans "Date" %}</th>
+                                    <th>{% trans "Transfert" %}</th>
+                                    <th>{% trans "Montant Transfert" %}</th>
+                                    <th>{% trans "Commission Agent" %}</th>
+                                    <th>{% trans "Validé Par" %}</th>
+                                    <th>{% trans "ID Commission" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for c in detailed_commissions %}
+                                <tr>
+                                    {% if is_manager %}
+                                    <td>
+                                        <span class="badge bg-primary">{{ c.agent.username }}</span>
+                                    </td>
+                                    {% endif %}
+                                    <td class="text-muted">{{ c.created_at|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        <a href="{% url 'transfer_detail' transfer_id=c.transfer.id %}" class="btn btn-sm btn-outline-info">
+                                            <i class="bi bi-eye"></i> #{{ c.transfer.id }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <strong>{{ c.transfer.amount|floatformat:2 }}</strong> {{ c.transfer.sent_currency }}
+                                    </td>
+                                    <td>
+                                        <span class="text-success fw-bold">{{ c.declaring_agent_amount|floatformat:2 }} €</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success">{{ c.transfer.validated_by.username }}</span>
+                                    </td>
+                                    <td>
+                                        <code class="small">#{{ c.id }}</code>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {% if detailed_commissions|length >= 50 %}
+                    <div class="alert alert-info mt-3">
+                        <i class="bi bi-info-circle"></i>
+                        {% trans "Affichage des 50 commissions les plus récentes. Utilisez les filtres pour affiner les résultats." %}
+                    </div>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-cash-stack display-1 text-muted"></i>
+                        <h4 class="mt-3">{% trans "Aucune commission détaillée" %}</h4>
+                        <p class="text-muted">{% trans "Aucune commission n'a été trouvée pour la période sélectionnée." %}</p>
+                        <a href="{% url 'transfer_list' %}" class="btn btn-primary">
+                            <i class="bi bi-arrow-left-right"></i> {% trans "Voir les Transferts" %}
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Summary Cards for Agents -->
+{% if not is_manager and detailed_commissions %}
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <i class="bi bi-cash-coin display-6"></i>
+                <h5 class="mt-2">{% trans "Commission Totale" %}</h5>
+                <h3>{% with total=detailed_commissions|length %}{{ total }}{% endwith %} {% trans "transferts" %}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <i class="bi bi-calendar-check display-6"></i>
+                <h5 class="mt-2">{% trans "Cette Période" %}</h5>
+                <h3>{{ period_label|title }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <i class="bi bi-graph-up display-6"></i>
+                <h5 class="mt-2">{% trans "Performance" %}</h5>
+                <h3>{% trans "Active" %}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endblock %}

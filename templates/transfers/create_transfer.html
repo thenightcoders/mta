@@ -1,128 +1,198 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}Create Transfer - Money Transfer App{% endblock %}
+{% block title %}{% trans "Déclarer Nouveau Transfert" %} - {% trans "Application de Transfert d'Argent" %}{% endblock %}
 
 {% block content %}
-
 {% if form.non_field_errors %}
-  <div class="alert alert-danger">
-    {% for error in form.non_field_errors %}
-      <div>{{ error }}</div>
-    {% endfor %}
-  </div>
+<div class="row justify-content-between mb-3">
+    <div class="col-10">
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-circle"></i>
+            {% for error in form.non_field_errors %}
+                <div>{{ error }}</div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
 {% endif %}
 
-<div class="row">
-    <div class="col-12">
+<div class="row justify-content-center">
+    <div class="col-10">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>
-                <i class="bi bi-plus-circle"></i> Declare New Transfer
-            </h1>
+            <h2>
+                <i class="bi bi-plus-circle"></i> {% trans "Déclarer Nouveau Transfert" %}
+            </h2>
             <a href="{% url 'transfer_list' %}" class="btn btn-secondary">
-                <i class="bi bi-arrow-left"></i> Back to Transfers
+                <i class="bi bi-arrow-left"></i> {% trans "Retour aux Transferts" %}
             </a>
         </div>
     </div>
 </div>
 
 <div class="row justify-content-center">
-    <div class="col-md-8">
+    <div class="col-md-10">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">Transfer Details</h5>
+                <h5 class="mb-0">
+                    <i class="bi bi-info-circle"></i> {% trans "Détails du Transfert" %}
+                </h5>
             </div>
             <div class="card-body">
-                <form method="post" autocomplete="off">
+                <form method="post" autocomplete="off" id="transfer-form" novalidate>
                     {% csrf_token %}
 
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="{{ form.beneficiary_name.id_for_label }}" class="form-label">Beneficiary Name *</label>
-                                {{ form.beneficiary_name }}
-                                {% if form.beneficiary_name.errors %}
-                                    <div class="text-danger small mt-1">
-                                        {{ form.beneficiary_name.errors.0 }}
-                                    </div>
-                                {% endif %}
+                    <!-- Beneficiary Information -->
+                    <div class="mb-4">
+                        <h6 class="text-primary mb-3">
+                            <i class="bi bi-person"></i> {% trans "Informations du Bénéficiaire" %}
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.beneficiary_name.id_for_label }}" class="form-label">{% trans "Nom du Bénéficiaire" %} *</label>
+                                    {{ form.beneficiary_name }}
+                                    <div class="form-text">{% trans "Nom complet de la personne qui recevra l'argent" %}</div>
+                                    {% if form.beneficiary_name.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.beneficiary_name.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="{{ form.beneficiary_phone.id_for_label }}" class="form-label">Beneficiary Phone *</label>
-                                {{ form.beneficiary_phone }}
-                                {% if form.beneficiary_phone.errors %}
-                                    <div class="text-danger small mt-1">
-                                        {{ form.beneficiary_phone.errors.0 }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label for="{{ form.amount.id_for_label }}" class="form-label">Amount *</label>
-                                {{ form.amount }}
-                                {% if form.amount.errors %}
-                                    <div class="text-danger small mt-1">
-                                        {{ form.amount.errors.0 }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label for="{{ form.sent_currency.id_for_label }}" class="form-label">From Currency</label>
-                                {{ form.sent_currency }}
-                                {% if form.sent_currency.errors %}
-                                    <div class="text-danger small mt-1">
-                                        {{ form.sent_currency.errors.0 }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label for="{{ form.received_currency.id_for_label }}" class="form-label">To Currency</label>
-                                {{ form.received_currency }}
-                                {% if form.received_currency.errors %}
-                                    <div class="text-danger small mt-1">
-                                        {{ form.received_currency.errors.0 }}
-                                    </div>
-                                {% endif %}
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.beneficiary_phone.id_for_label }}" class="form-label">{% trans "Téléphone du Bénéficiaire" %} *</label>
+                                    {{ form.beneficiary_phone }}
+                                    <div class="form-text">{% trans "Numéro de téléphone pour la notification" %}</div>
+                                    {% if form.beneficiary_phone.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.beneficiary_phone.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="{{ form.method.id_for_label }}" class="form-label">Withdrawal Method</label>
-                        {{ form.method }}
-                        {% if form.method.errors %}
-                            <div class="text-danger small mt-1">
-                                {{ form.method.errors.0 }}
+                    <!-- Transfer Amount -->
+                    <div class="mb-4">
+                        <h6 class="text-primary mb-3">
+                            <i class="bi bi-cash-stack"></i> {% trans "Montant et Devises" %}
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.amount.id_for_label }}" class="form-label">{% trans "Montant" %} *</label>
+                                    {{ form.amount }}
+                                    <div class="form-text">{% trans "Montant que vous avez reçu du client" %}</div>
+                                    {% if form.amount.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.amount.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
                             </div>
-                        {% endif %}
+
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.sent_currency.id_for_label }}" class="form-label">{% trans "Devise Envoyée" %} *</label>
+                                    {{ form.sent_currency }}
+                                    <div class="form-text">{% trans "Devise que vous avez reçue" %}</div>
+                                    {% if form.sent_currency.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.sent_currency.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.received_currency.id_for_label }}" class="form-label">{% trans "Devise Reçue" %} *</label>
+                                    {{ form.received_currency }}
+                                    <div class="form-text">{% trans "Devise que recevra le bénéficiaire" %}</div>
+                                    {% if form.received_currency.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.received_currency.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="{{ form.comment.id_for_label }}" class="form-label">Comments</label>
-                        {{ form.comment }}
-                        {% if form.comment.errors %}
-                            <div class="text-danger small mt-1">
-                                {{ form.comment.errors.0 }}
+                    <!-- Exchange Rate Preview -->
+                    <div class="mb-4" id="exchange-preview" style="display: none;">
+                        <div class="alert alert-info">
+                            <h6 class="mb-2">
+                                <i class="bi bi-calculator"></i> {% trans "Aperçu du Change" %}
+                            </h6>
+                            <div id="exchange-details"></div>
+                        </div>
+                    </div>
+
+                    <!-- Transfer Details -->
+                    <div class="mb-4">
+                        <h6 class="text-primary mb-3">
+                            <i class="bi bi-gear"></i> {% trans "Détails du Transfert" %}
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.method.id_for_label }}" class="form-label">{% trans "Méthode de Retrait" %} *</label>
+                                    {{ form.method }}
+                                    <div class="form-text">{% trans "Comment le bénéficiaire recevra l'argent" %}</div>
+                                    {% if form.method.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.method.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
                             </div>
-                        {% endif %}
+
+                            <div class="col-md-6">
+                                <!-- Commission Preview -->
+                                <div class="mb-3">
+                                    <label class="form-label">{% trans "Commission Estimée" %}</label>
+                                    <div class="p-2 bg-light rounded" id="commission-preview">
+                                        <em class="text-muted">{% trans "Entrez un montant pour voir la commission" %}</em>
+                                    </div>
+                                    <div class="form-text">{% trans "Commission que vous gagnerez sur ce transfert" %}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Comments -->
+                    <div class="mb-4">
+                        <h6 class="text-primary mb-3">
+                            <i class="bi bi-chat-text"></i> {% trans "Commentaires" %}
+                        </h6>
+                        <div class="mb-3">
+                            <label for="{{ form.comment.id_for_label }}" class="form-label">{% trans "Commentaires" %}</label>
+                            {{ form.comment }}
+                            <div class="form-text">{% trans "Notes optionnelles sur ce transfert" %}</div>
+                            {% if form.comment.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.comment.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Important Notice -->
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>{% trans "Important" %} :</strong> {% trans "Vérifiez toutes les informations avant de déclarer le transfert. Une fois déclaré, il devra être validé par un gestionnaire." %}
                     </div>
 
                     <div class="d-flex justify-content-end gap-2">
-                        <a href="{% url 'transfer_list' %}" class="btn btn-secondary">Cancel</a>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check-lg"></i> Declare Transfer
+                        <a href="{% url 'transfer_list' %}" class="btn btn-secondary">{% trans "Annuler" %}</a>
+                        <button type="submit" class="btn btn-primary" id="submit-btn">
+                            <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                            <i class="bi bi-check-lg"></i> {% trans "Déclarer Transfert" %}
                         </button>
                     </div>
                 </form>
@@ -130,4 +200,254 @@
         </div>
     </div>
 </div>
+
+<!-- Quick Actions -->
+<div class="row justify-content-center mt-4">
+    <div class="col-10">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightning"></i> {% trans "Actions Rapides" %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'transfer_list' %}" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-list"></i> {% trans "Mes Transferts" %}
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'commissions_overview' %}" class="btn btn-outline-success w-100">
+                            <i class="bi bi-cash-coin"></i> {% trans "Mes Commissions" %}
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'exchange_rate_list' %}" class="btn btn-outline-info w-100">
+                            <i class="bi bi-currency-exchange"></i> {% trans "Taux de Change" %}
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary w-100">
+                            <i class="bi bi-house"></i> {% trans "Tableau de Bord" %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Mock commission configs - replace with actual data from backend
+const commissionConfigs = [
+    { currency: 'EUR', minAmount: 0, maxAmount: 500, commissionRate: 3, agentShare: 40 },
+    { currency: 'EUR', minAmount: 500, maxAmount: 2000, commissionRate: 2.5, agentShare: 45 },
+    { currency: 'BIF', minAmount: 0, maxAmount: 1000000, commissionRate: 5, agentShare: 35 }
+];
+
+function calculateCommission() {
+    const amount = parseFloat(document.getElementById('{{ form.amount.id_for_label }}').value) || 0;
+    const currency = document.getElementById('{{ form.sent_currency.id_for_label }}').value;
+    const previewDiv = document.getElementById('commission-preview');
+
+    if (amount <= 0 || !currency) {
+        previewDiv.innerHTML = '<em class="text-muted">{% trans "Entrez un montant pour voir la commission" %}</em>';
+        return;
+    }
+
+    // Find applicable config
+    const config = commissionConfigs.find(c =>
+        c.currency === currency &&
+        amount >= c.minAmount &&
+        amount <= c.maxAmount
+    );
+
+    if (config) {
+        const totalCommission = (amount * config.commissionRate) / 100;
+        const agentAmount = (totalCommission * config.agentShare) / 100;
+
+        previewDiv.innerHTML = `
+            <div class="row">
+                <div class="col-6">
+                    <small class="text-muted">{% trans "Vous gagnerez" %}:</small>
+                    <div class="fw-bold text-success">${agentAmount.toFixed(2)} ${currency}</div>
+                </div>
+                <div class="col-6">
+                    <small class="text-muted">{% trans "Taux appliqué" %}:</small>
+                    <div class="fw-bold">${config.commissionRate}%</div>
+                </div>
+            </div>
+        `;
+    } else {
+        previewDiv.innerHTML = '<div class="text-warning">{% trans "Aucune configuration de commission trouvée" %}</div>';
+    }
+}
+
+function updateExchangePreview() {
+    const amount = parseFloat(document.getElementById('{{ form.amount.id_for_label }}').value) || 0;
+    const fromCurrency = document.getElementById('{{ form.sent_currency.id_for_label }}').value;
+    const toCurrency = document.getElementById('{{ form.received_currency.id_for_label }}').value;
+    const exchangePreview = document.getElementById('exchange-preview');
+    const exchangeDetails = document.getElementById('exchange-details');
+
+    if (amount > 0 && fromCurrency && toCurrency && fromCurrency !== toCurrency) {
+        // Mock exchange rate - replace with actual data
+        const rate = fromCurrency === 'EUR' && toCurrency === 'BIF' ? 3000 :
+                    fromCurrency === 'BIF' && toCurrency === 'EUR' ? 0.00033 : 1;
+
+        const convertedAmount = amount * rate;
+
+        exchangeDetails.innerHTML = `
+            <strong>${amount} ${fromCurrency}</strong> = <strong>${convertedAmount.toFixed(2)} ${toCurrency}</strong>
+            <small class="text-muted d-block">{% trans "Taux" %}: 1 ${fromCurrency} = ${rate} ${toCurrency}</small>
+        `;
+        exchangePreview.style.display = 'block';
+    } else {
+        exchangePreview.style.display = 'none';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('transfer-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const spinner = submitBtn.querySelector('.spinner-border');
+
+    // Real-time calculations
+    const amountInput = document.getElementById('{{ form.amount.id_for_label }}');
+    const sentCurrencyInput = document.getElementById('{{ form.sent_currency.id_for_label }}');
+    const receivedCurrencyInput = document.getElementById('{{ form.received_currency.id_for_label }}');
+
+    [amountInput, sentCurrencyInput].forEach(input => {
+        if (input) input.addEventListener('input', calculateCommission);
+    });
+
+    [amountInput, sentCurrencyInput, receivedCurrencyInput].forEach(input => {
+        if (input) input.addEventListener('change', updateExchangePreview);
+    });
+
+    // Form validation
+    form.addEventListener('submit', (e) => {
+        const requiredFields = ['beneficiary_name', 'beneficiary_phone', 'amount', 'sent_currency', 'received_currency', 'method'];
+        let isValid = true;
+
+        requiredFields.forEach(fieldName => {
+            const input = form.querySelector(`[name="${fieldName}"]`);
+            if (!input) return;
+
+            const errorDiv = input.nextElementSibling?.classList.contains('text-danger')
+                ? input.nextElementSibling
+                : null;
+
+            if (errorDiv) {
+                errorDiv.remove();
+            }
+
+            if (!input.value.trim()) {
+                isValid = false;
+                const error = document.createElement('div');
+                error.className = 'text-danger small mt-1';
+                error.textContent = '{% trans "Ce champ est requis" %}';
+                input.classList.add('is-invalid');
+                input.parentNode.appendChild(error);
+            } else {
+                input.classList.remove('is-invalid');
+                input.classList.add('is-valid');
+            }
+
+            // Validate amount is positive
+            if (fieldName === 'amount' && input.value.trim()) {
+                const amount = parseFloat(input.value);
+                if (amount <= 0) {
+                    isValid = false;
+                    const error = document.createElement('div');
+                    error.className = 'text-danger small mt-1';
+                    error.textContent = '{% trans "Le montant doit être positif" %}';
+                    input.classList.add('is-invalid');
+                    input.classList.remove('is-valid');
+                    input.parentNode.appendChild(error);
+                }
+            }
+        });
+
+        if (!isValid) {
+            e.preventDefault();
+            return;
+        }
+
+        // Show loading state
+        submitBtn.disabled = true;
+        spinner.classList.remove('d-none');
+    });
+
+    // Real-time validation
+    form.querySelectorAll('input, select, textarea').forEach(input => {
+        input.addEventListener('input', () => {
+            const errorDiv = input.nextElementSibling?.classList.contains('text-danger')
+                ? input.nextElementSibling
+                : null;
+
+            if (errorDiv) {
+                errorDiv.remove();
+            }
+
+            if (input.value.trim()) {
+                if (input.name === 'amount') {
+                    const amount = parseFloat(input.value);
+                    if (amount > 0) {
+                        input.classList.add('is-valid');
+                        input.classList.remove('is-invalid');
+                    } else {
+                        input.classList.add('is-invalid');
+                        input.classList.remove('is-valid');
+                    }
+                } else {
+                    input.classList.add('is-valid');
+                    input.classList.remove('is-invalid');
+                }
+            } else if (input.required) {
+                input.classList.add('is-invalid');
+                input.classList.remove('is-valid');
+            }
+        });
+    });
+
+    // Initial calculations
+    calculateCommission();
+    updateExchangePreview();
+});
+</script>
+
+<style>
+.is-valid {
+    border-color: #28a745 !important;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%2328a745' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4.3 4.8c-.4.43-1.1.43-1.7 0z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right calc(0.375em + 0.1875rem) center;
+    background-size: 1.125rem;
+}
+
+.is-invalid {
+    border-color: #dc3545 !important;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right calc(0.375em + 0.1875rem) center;
+    background-size: 1.125rem;
+}
+
+.text-primary {
+    color: #0d6efd !important;
+}
+
+#exchange-preview {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+</style>
 {% endblock %}

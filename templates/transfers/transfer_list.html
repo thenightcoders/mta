@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}Transfers - Money Transfer App{% endblock %}
+{% block title %}{% trans "Transferts" %} - {% trans "Application de Transfert d'Argent" %}{% endblock %}
 
 {% block content %}
 <div class="row">
@@ -8,16 +9,16 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>
                 <i class="bi bi-arrow-left-right"></i>
-                {% if user.is_manager %}All Transfers{% else %}My Transfers{% endif %}
+                {% if user.is_manager %}{% trans "Tous les Transferts" %}{% else %}{% trans "Mes Transferts" %}{% endif %}
             </h1>
             <div>
                 {% if user.is_manager %}
                 <a href="{% url 'pending_transfers' %}" class="btn btn-warning me-2">
-                    <i class="bi bi-clock"></i> Pending
+                    <i class="bi bi-clock"></i> {% trans "En Attente" %}
                 </a>
                 {% endif %}
                 <a href="{% url 'create_transfer' %}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> New Transfer
+                    <i class="bi bi-plus-circle"></i> {% trans "Nouveau Transfert" %}
                 </a>
             </div>
         </div>
@@ -28,12 +29,17 @@
 <div class="row mb-4">
     <div class="col-12">
         <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-funnel"></i> {% trans "Filtres" %}
+                </h5>
+            </div>
             <div class="card-body">
                 <form method="get" class="row g-3">
                     <div class="col-md-3">
-                        <label class="form-label">Status</label>
+                        <label class="form-label">{% trans "Statut" %}</label>
                         <select name="status" class="form-select">
-                            <option value="">All Statuses</option>
+                            <option value="">{% trans "Tous les Statuts" %}</option>
                             {% for value, label in status_choices %}
                                 <option value="{{ value }}" {% if current_status == value %}selected{% endif %}>
                                     {{ label }}
@@ -45,10 +51,10 @@
                         <label class="form-label">&nbsp;</label>
                         <div>
                             <button type="submit" class="btn btn-outline-primary">
-                                <i class="bi bi-funnel"></i> Filter
+                                <i class="bi bi-funnel"></i> {% trans "Filtrer" %}
                             </button>
                             <a href="{% url 'transfer_list' %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-x"></i> Clear
+                                <i class="bi bi-x"></i> {% trans "Effacer" %}
                             </a>
                         </div>
                     </div>
@@ -69,16 +75,16 @@
                             <thead>
                                 <tr>
                                     <th>ID</th>
-                                    <th>Beneficiary</th>
-                                    <th>Phone</th>
-                                    <th>Amount</th>
-                                    <th>Method</th>
+                                    <th>{% trans "Bénéficiaire" %}</th>
+                                    <th>{% trans "Téléphone" %}</th>
+                                    <th>{% trans "Montant" %}</th>
+                                    <th>{% trans "Méthode" %}</th>
                                     {% if user.is_manager %}
-                                    <th>Agent</th>
+                                    <th>{% trans "Agent" %}</th>
                                     {% endif %}
-                                    <th>Status</th>
-                                    <th>Created</th>
-                                    <th>Actions</th>
+                                    <th>{% trans "Statut" %}</th>
+                                    <th>{% trans "Créé" %}</th>
+                                    <th>{% trans "Actions" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -108,7 +114,7 @@
                                             {{ transfer.get_status_display }}
                                         </span>
                                     </td>
-                                    <td class="text-muted">{{ transfer.created_at|date:"M d, Y H:i" }}</td>
+                                    <td class="text-muted">{{ transfer.created_at|date:"d M Y H:i" }}</td>
                                     <td>
                                         <a href="{% url 'transfer_detail' transfer.id %}" class="btn btn-sm btn-outline-primary">
                                             <i class="bi bi-eye"></i>
@@ -122,16 +128,16 @@
                 {% else %}
                     <div class="text-center py-4">
                         <i class="bi bi-arrow-left-right display-1 text-muted"></i>
-                        <h4 class="mt-3">No transfers found</h4>
+                        <h4 class="mt-3">{% trans "Aucun transfert trouvé" %}</h4>
                         <p class="text-muted">
                             {% if current_status %}
-                                No transfers with status "{{ current_status|title }}" found.
+                                {% blocktrans with status=current_status|title %}Aucun transfert avec le statut "{{ status }}" trouvé.{% endblocktrans %}
                             {% else %}
-                                Start by creating your first transfer.
+                                {% trans "Commencez par créer votre premier transfert." %}
                             {% endif %}
                         </p>
                         <a href="{% url 'create_transfer' %}" class="btn btn-primary">
-                            <i class="bi bi-plus-circle"></i> Create Transfer
+                            <i class="bi bi-plus-circle"></i> {% trans "Créer Transfert" %}
                         </a>
                     </div>
                 {% endif %}

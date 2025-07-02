@@ -1,32 +1,82 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}Pending Transfers - Money Transfer App{% endblock %}
+{% block title %}{% trans "Transferts en Attente" %} - {% trans "Application de Transfert d'Argent" %}{% endblock %}
 
 {% block content %}
 <div class="row">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>
-                <i class="bi bi-clock"></i> Pending Transfers
+                <i class="bi bi-clock"></i> {% trans "Transferts en Attente" %}
                 {% if transfers %}
                 <span class="badge bg-warning text-dark ms-2">{{ transfers|length }}</span>
                 {% endif %}
             </h1>
             <div>
                 <a href="{% url 'transfer_list' %}" class="btn btn-secondary me-2">
-                    <i class="bi bi-list"></i> All Transfers
+                    <i class="bi bi-list"></i> {% trans "Tous les Transferts" %}
                 </a>
                 <a href="{% url 'create_transfer' %}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> New Transfer
+                    <i class="bi bi-plus-circle"></i> {% trans "Nouveau Transfert" %}
                 </a>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Quick Stats -->
+{% if transfers %}
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-warning text-dark">
+            <div class="card-body text-center">
+                <i class="bi bi-clock display-6"></i>
+                <h5 class="mt-2">{% trans "En Attente" %}</h5>
+                <h3>{{ transfers|length }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <i class="bi bi-cash-stack display-6"></i>
+                <h5 class="mt-2">{% trans "Montant Total" %}</h5>
+                <h3>{% with total_amount=transfers|length %}{{ total_amount }}{% endwith %}</h3>
+                <small>{% trans "transferts" %}</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <i class="bi bi-people display-6"></i>
+                <h5 class="mt-2">{% trans "Agents" %}</h5>
+                <h3>{% regroup transfers by agent as agent_groups %}{{ agent_groups|length }}</h3>
+                <small>{% trans "différents" %}</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <i class="bi bi-lightning display-6"></i>
+                <h5 class="mt-2">{% trans "Action Requise" %}</h5>
+                <h3>{% trans "Validation" %}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <div class="row">
     <div class="col-12">
         <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-list-task"></i> {% trans "Liste des Transferts en Attente" %}
+                </h5>
+            </div>
             <div class="card-body">
                 {% if transfers %}
                     <div class="table-responsive">
@@ -34,29 +84,33 @@
                             <thead>
                                 <tr>
                                     <th>ID</th>
-                                    <th>Beneficiary</th>
-                                    <th>Phone</th>
-                                    <th>Amount</th>
-                                    <th>Method</th>
-                                    <th>Agent</th>
-                                    <th>Created</th>
-                                    <th>Actions</th>
+                                    <th>{% trans "Bénéficiaire" %}</th>
+                                    <th>{% trans "Téléphone" %}</th>
+                                    <th>{% trans "Montant" %}</th>
+                                    <th>{% trans "Méthode" %}</th>
+                                    <th>{% trans "Agent" %}</th>
+                                    <th>{% trans "Créé" %}</th>
+                                    <th>{% trans "Actions" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for transfer in transfers %}
-                                <tr>
+                                <tr class="{% if transfer.created_at|timesince|slice:':1' == '0' %}table-warning{% endif %}">
                                     <td>
-                                        <a href="{% url 'transfer_detail' transfer.id %}" class="text-decoration-none">
+                                        <a href="{% url 'transfer_detail' transfer.id %}" class="text-decoration-none fw-bold">
                                             #{{ transfer.id }}
                                         </a>
                                     </td>
-                                    <td>{{ transfer.beneficiary_name }}</td>
-                                    <td>{{ transfer.beneficiary_phone }}</td>
                                     <td>
-                                        <strong>{{ transfer.amount }}</strong> {{ transfer.sent_currency }}
+                                        <strong>{{ transfer.beneficiary_name }}</strong>
+                                    </td>
+                                    <td>
+                                        <code class="small">{{ transfer.beneficiary_phone }}</code>
+                                    </td>
+                                    <td>
+                                        <strong class="text-primary">{{ transfer.amount|floatformat:2 }}</strong> {{ transfer.sent_currency }}
                                         {% if transfer.sent_currency != transfer.received_currency %}
-                                            → {{ transfer.received_currency }}
+                                            <br><small class="text-muted">→ {{ transfer.received_currency }}</small>
                                         {% endif %}
                                     </td>
                                     <td>
@@ -64,20 +118,24 @@
                                     </td>
                                     <td>
                                         <span class="badge bg-primary">{{ transfer.agent.get_user_type_display }}</span>
-                                        {{ transfer.agent.get_full_name|default:transfer.agent.username }}
+                                        <br><small>{{ transfer.agent.get_full_name|default:transfer.agent.username }}</small>
                                     </td>
-                                    <td class="text-muted">{{ transfer.created_at|timesince }} ago</td>
+                                    <td class="text-muted">
+                                        <span data-bs-toggle="tooltip" title="{{ transfer.created_at|date:'d/m/Y H:i' }}">
+                                            {{ transfer.created_at|timesince }} {% trans "il y a" %}
+                                        </span>
+                                    </td>
                                     <td>
                                         <div class="btn-group btn-group-sm" role="group">
-                                            <a href="{% url 'transfer_detail' transfer.id %}" class="btn btn-outline-primary">
+                                            <a href="{% url 'transfer_detail' transfer.id %}" class="btn btn-outline-info" data-bs-toggle="tooltip" title="{% trans 'Voir détails' %}">
                                                 <i class="bi bi-eye"></i>
                                             </a>
                                             <button type="button" class="btn btn-outline-success"
-                                                    onclick="quickValidate({{ transfer.id }}, 'validate')">
+                                                    onclick="quickValidate({{ transfer.id }}, 'validate')" data-bs-toggle="tooltip" title="{% trans 'Valider rapidement' %}">
                                                 <i class="bi bi-check"></i>
                                             </button>
                                             <button type="button" class="btn btn-outline-danger"
-                                                    onclick="quickValidate({{ transfer.id }}, 'reject')">
+                                                    onclick="quickValidate({{ transfer.id }}, 'reject')" data-bs-toggle="tooltip" title="{% trans 'Rejeter rapidement' %}">
                                                 <i class="bi bi-x"></i>
                                             </button>
                                         </div>
@@ -89,21 +147,28 @@
                     </div>
 
                     <div class="mt-3">
-                        <p class="text-muted">
+                        <div class="alert alert-info">
                             <i class="bi bi-info-circle"></i>
-                            Click <i class="bi bi-eye"></i> to view details,
-                            <i class="bi bi-check"></i> to validate, or
-                            <i class="bi bi-x"></i> to reject transfers.
-                        </p>
+                            <strong>{% trans "Guide rapide" %} :</strong>
+                            {% trans "Cliquez sur" %} <i class="bi bi-eye"></i> {% trans "pour voir les détails" %},
+                            <i class="bi bi-check"></i> {% trans "pour valider" %}, {% trans "ou" %}
+                            <i class="bi bi-x"></i> {% trans "pour rejeter les transferts" %}.
+                            {% trans "Les transferts récents sont surlignés en jaune" %}.
+                        </div>
                     </div>
                 {% else %}
                     <div class="text-center py-5">
                         <i class="bi bi-check-circle display-1 text-success"></i>
-                        <h4 class="mt-3">All caught up!</h4>
-                        <p class="text-muted">No pending transfers requiring validation.</p>
-                        <a href="{% url 'transfer_list' %}" class="btn btn-outline-primary">
-                            <i class="bi bi-list"></i> View All Transfers
-                        </a>
+                        <h4 class="mt-3">{% trans "Tout est à jour !" %}</h4>
+                        <p class="text-muted">{% trans "Aucun transfert en attente de validation." %}</p>
+                        <div class="d-flex justify-content-center gap-2 mt-3">
+                            <a href="{% url 'transfer_list' %}" class="btn btn-outline-primary">
+                                <i class="bi bi-list"></i> {% trans "Voir Tous les Transferts" %}
+                            </a>
+                            <a href="{% url 'create_transfer' %}" class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i> {% trans "Nouveau Transfert" %}
+                            </a>
+                        </div>
                     </div>
                 {% endif %}
             </div>
@@ -111,12 +176,51 @@
     </div>
 </div>
 
+<!-- Quick Actions Card -->
+{% if transfers %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightning"></i> {% trans "Actions Rapides" %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <button class="btn btn-outline-success w-100" onclick="validateAll()">
+                            <i class="bi bi-check-all"></i> {% trans "Valider Tous" %}
+                        </button>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'commission_config_list' %}" class="btn btn-outline-info w-100">
+                            <i class="bi bi-percent"></i> {% trans "Configurations Commission" %}
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'stock_list' %}" class="btn btn-outline-warning w-100">
+                            <i class="bi bi-bank"></i> {% trans "Gérer Stock" %}
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'manager_dashboard' %}" class="btn btn-outline-secondary w-100">
+                            <i class="bi bi-speedometer2"></i> {% trans "Tableau de Bord" %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <!-- Quick Validation Modal -->
 <div class="modal fade" id="quickValidationModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="quickValidationTitle">Validate Transfer</h5>
+                <h5 class="modal-title" id="quickValidationTitle">{% trans "Valider Transfert" %}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -125,15 +229,19 @@
                     <input type="hidden" id="quickTransferId" value="">
                     <input type="hidden" id="quickValidationAction" name="action" value="">
                     <div class="mb-3">
-                        <label for="quickValidationComment" class="form-label">Comment (optional)</label>
+                        <label for="quickValidationComment" class="form-label">{% trans "Commentaire" %} ({% trans "optionnel" %})</label>
                         <textarea class="form-control" id="quickValidationComment" name="comment" rows="3"
-                                placeholder="Add a comment about this decision..."></textarea>
+                                placeholder="{% trans 'Ajouter un commentaire sur cette décision...' %}"></textarea>
+                    </div>
+                    <div class="alert alert-warning" id="rejectionWarning" style="display: none;">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        {% trans "Un commentaire est fortement recommandé pour les rejets afin d'expliquer la raison à l'agent." %}
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn" id="quickValidationSubmitBtn" onclick="submitQuickValidation()">Confirm</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Annuler" %}</button>
+                <button type="button" class="btn" id="quickValidationSubmitBtn" onclick="submitQuickValidation()">{% trans "Confirmer" %}</button>
             </div>
         </div>
     </div>
@@ -142,6 +250,14 @@
 
 {% block extra_js %}
 <script>
+// Initialize tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+
 function quickValidate(transferId, action) {
     const modal = new bootstrap.Modal(document.getElementById('quickValidationModal'));
     const title = document.getElementById('quickValidationTitle');
@@ -149,20 +265,25 @@ function quickValidate(transferId, action) {
     const actionInput = document.getElementById('quickValidationAction');
     const submitBtn = document.getElementById('quickValidationSubmitBtn');
     const comment = document.getElementById('quickValidationComment');
+    const rejectionWarning = document.getElementById('rejectionWarning');
 
     // Reset form
     comment.value = '';
+    rejectionWarning.style.display = 'none';
 
     if (action === 'validate') {
-        title.textContent = 'Validate Transfer #' + transferId;
-        submitBtn.textContent = 'Validate';
+        title.textContent = '{% trans "Valider Transfert" %} #' + transferId;
+        submitBtn.textContent = '{% trans "Valider" %}';
         submitBtn.className = 'btn btn-success';
+        comment.placeholder = '{% trans "Ajouter un commentaire sur cette validation..." %}';
+        comment.required = false;
     } else {
-        title.textContent = 'Reject Transfer #' + transferId;
-        submitBtn.textContent = 'Reject';
+        title.textContent = '{% trans "Rejeter Transfert" %} #' + transferId;
+        submitBtn.textContent = '{% trans "Rejeter" %}';
         submitBtn.className = 'btn btn-danger';
-        comment.placeholder = 'Please provide a reason for rejection...';
+        comment.placeholder = '{% trans "Veuillez fournir une raison pour le rejet..." %}';
         comment.required = true;
+        rejectionWarning.style.display = 'block';
     }
 
     transferIdInput.value = transferId;
@@ -172,6 +293,21 @@ function quickValidate(transferId, action) {
 
 function submitQuickValidation() {
     const transferId = document.getElementById('quickTransferId').value;
+    const action = document.getElementById('quickValidationAction').value;
+    const comment = document.getElementById('quickValidationComment').value;
+    const submitBtn = document.getElementById('quickValidationSubmitBtn');
+
+    // Validate rejection comment
+    if (action === 'reject' && !comment.trim()) {
+        alert('{% trans "Veuillez fournir une raison pour le rejet." %}');
+        return;
+    }
+
+    // Show loading state
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> {% trans "Traitement..." %}';
+
     const form = document.getElementById('quickValidationForm');
     const formData = new FormData(form);
 
@@ -185,14 +321,54 @@ function submitQuickValidation() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
+            // Show success message
+            const action_text = action === 'validate' ? '{% trans "validé" %}' : '{% trans "rejeté" %}';
+            alert(`{% trans "Transfert" %} #${transferId} ${action_text} {% trans "avec succès" %}!`);
             location.reload();
         } else {
-            alert('Error: ' + (data.error || 'Unknown error'));
+            alert('{% trans "Erreur" %}: ' + (data.error || '{% trans "Erreur inconnue" %}'));
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
         }
     })
     .catch(error => {
-        alert('Error: ' + error);
+        alert('{% trans "Erreur" %}: ' + error);
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
     });
 }
+
+function validateAll() {
+    const transferCount = {{ transfers|length }};
+    const confirmMessage = `{% trans "Êtes-vous sûr de vouloir valider tous les" %} ${transferCount} {% trans "transferts en attente ? Cette action ne peut pas être annulée." %}`;
+
+    if (confirm(confirmMessage)) {
+        // In a real implementation, you would send a request to validate all transfers
+        alert('{% trans "Fonctionnalité à implémenter : validation en lot de tous les transferts" %}');
+    }
+}
 </script>
+
+<style>
+.table-warning {
+    background-color: rgba(255, 193, 7, 0.1) !important;
+}
+
+.card-body .btn-group .btn {
+    border-radius: 0.25rem;
+}
+
+.card-body .btn-group .btn:not(:last-child) {
+    margin-right: 2px;
+}
+
+#quickValidationModal .modal-content {
+    border: none;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.alert-info {
+    border-left: 4px solid #0dcaf0;
+}
+</style>
 {% endblock %}
