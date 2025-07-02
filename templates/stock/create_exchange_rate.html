@@ -1,16 +1,17 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}Add Exchange Rate - Money Transfer App{% endblock %}
+{% block title %}{% trans "Ajouter un Taux de Change - Application de Transfert d'Argent" %}{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
+<div class="row justify-content-center">
+    <div class="col-8">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>
-                <i class="bi bi-plus-circle"></i> Add Exchange Rate
-            </h1>
-            <a href="{% url 'exchange_rate_list' %}" class="btn btn-secondary">
-                <i class="bi bi-arrow-left"></i> Back to Rates
+            <h2>
+                <i class="bi bi-plus-circle"></i> {% trans "Ajouter un Taux de Change" %}
+            </h2>
+           <a href="{% url 'exchange_rate_list' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> {% trans "Retour aux Taux" %}
             </a>
         </div>
     </div>
@@ -20,7 +21,7 @@
     <div class="col-md-8">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">Exchange Rate Details</h5>
+                <h5 class="mb-0">{% trans "Détails du Taux de Change" %}</h5>
             </div>
             <div class="card-body">
                 <form method="post" id="exchangeRateForm">
@@ -29,7 +30,7 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="{{ form.from_currency.id_for_label }}" class="form-label">From Currency *</label>
+                                <label for="{{ form.from_currency.id_for_label }}" class="form-label">{% trans "Devise Source" %} *</label>
                                 {{ form.from_currency }}
                                 {% if form.from_currency.errors %}
                                     <div class="text-danger small mt-1">
@@ -41,7 +42,7 @@
 
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="{{ form.to_currency.id_for_label }}" class="form-label">To Currency *</label>
+                                <label for="{{ form.to_currency.id_for_label }}" class="form-label">{% trans "Devise Cible" %} *</label>
                                 {{ form.to_currency }}
                                 {% if form.to_currency.errors %}
                                     <div class="text-danger small mt-1">
@@ -53,7 +54,7 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="{{ form.rate.id_for_label }}" class="form-label">Exchange Rate *</label>
+                        <label for="{{ form.rate.id_for_label }}" class="form-label">{% trans "Taux de Change" %} *</label>
                         <div class="input-group">
                             <span class="input-group-text">1</span>
                             <span class="input-group-text" id="fromCurrencyDisplay">EUR</span>
@@ -61,7 +62,7 @@
                             {{ form.rate }}
                             <span class="input-group-text" id="toCurrencyDisplay">BIF</span>
                         </div>
-                        <div class="form-text">How much of the "To Currency" equals 1 unit of the "From Currency"</div>
+                        <div class="form-text">{% trans "Combien de la devise cible équivaut à 1 unité de la devise source" %}</div>
                         {% if form.rate.errors %}
                             <div class="text-danger small mt-1">
                                 {{ form.rate.errors.0 }}
@@ -72,7 +73,7 @@
                     <!-- Exchange Rate Examples -->
                     <div class="card bg-light mb-3">
                         <div class="card-header">
-                            <h6 class="mb-0">Exchange Rate Examples</h6>
+                            <h6 class="mb-0">{% trans "Exemples de Taux de Change" %}</h6>
                         </div>
                         <div class="card-body">
                             <div class="row" id="exchangeExamples">
@@ -104,19 +105,19 @@
                     <!-- Important Notes -->
                     <div class="alert alert-info">
                         <i class="bi bi-info-circle"></i>
-                        <strong>Important:</strong>
+                        <strong>{% trans "Important" %}:</strong>
                         <ul class="mb-0 mt-2">
-                            <li>Exchange rates are used for inter-stock transfers between different currencies</li>
-                            <li>The rate should reflect the current market exchange rate</li>
-                            <li>Historical rates are preserved for audit purposes</li>
-                            <li>Only the most recent rate for each currency pair is used for new transfers</li>
+                            <li>{% trans "Les taux de change sont utilisés pour les transferts entre stocks de différentes devises" %}</li>
+                            <li>{% trans "Le taux doit refléter le taux de change actuel du marché" %}</li>
+                            <li>{% trans "Les taux historiques sont conservés à des fins d'audit" %}</li>
+                            <li>{% trans "Seul le taux le plus récent pour chaque paire de devises est utilisé pour les nouveaux transferts" %}</li>
                         </ul>
                     </div>
 
                     <div class="d-flex justify-content-end gap-2">
-                        <a href="{% url 'exchange_rate_list' %}" class="btn btn-secondary">Cancel</a>
+                        <a href="{% url 'exchange_rate_list' %}" class="btn btn-secondary">{% trans "Annuler" %}</a>
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check-lg"></i> Add Exchange Rate
+                            <i class="bi bi-check-lg"></i> {% trans "Ajouter un Taux de Change" %}
                         </button>
                     </div>
                 </form>

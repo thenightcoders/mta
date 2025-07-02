@@ -1,22 +1,23 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}Stock Details - Money Transfer App{% endblock %}
+{% block title %}{% trans "Détails du Stock - Application de Transfert d'Argent" %}{% endblock %}
 
 {% block content %}
 <div class="row">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>
-                <i class="bi bi-bank"></i> Stock Details
+                <i class="bi bi-bank"></i> {% trans "Détails du Stock" %}
                 <span class="badge bg-primary ms-2">{{ stock.currency }}</span>
                 <span class="badge bg-secondary ms-1">{{ stock.get_location_display }}</span>
             </h1>
             <div>
                 <a href="{% url 'stock_list' %}" class="btn btn-secondary me-2">
-                    <i class="bi bi-arrow-left"></i> Back to Stocks
+                    <i class="bi bi-arrow-left"></i> {% trans "Retour aux Stocks" %}
                 </a>
                 <a href="{% url 'create_stock_movement' stock.id %}" class="btn btn-primary">
-                    <i class="bi bi-plus-minus"></i> Add Movement
+                    <i class="bi bi-plus-minus"></i> {% trans "Ajouter un Mouvement" %}
                 </a>
             </div>
         </div>
@@ -28,19 +29,19 @@
     <div class="col-md-8">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">Stock Information</h5>
+                <h5 class="mb-0">{% trans "Informations sur le Stock" %}</h5>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">
-                        <p><strong>Name:</strong> {{ stock.name|default:"—" }}</p>
-                        <p><strong>Currency:</strong> {{ stock.get_currency_display }}</p>
-                        <p><strong>Location:</strong> {{ stock.get_location_display }}</p>
+                        <p><strong>{% trans "Nom" %}:</strong> {{ stock.name|default:"—" }}</p>
+                        <p><strong>{% trans "Devise" %}:</strong> {{ stock.get_currency_display }}</p>
+                        <p><strong>{% trans "Emplacement" %}:</strong> {{ stock.get_location_display }}</p>
                     </div>
                     <div class="col-md-6">
-                        <p><strong>Created:</strong> {{ stock.created_at|date:"F d, Y H:i" }}</p>
-                        <p><strong>Last Updated:</strong> {{ stock.updated_at|date:"F d, Y H:i" }}</p>
-                        <p><strong>Current Balance:</strong>
+                        <p><strong>{% trans "Créé" %}:</strong> {{ stock.created_at|date:"d F Y H:i" }}</p>
+                        <p><strong>{% trans "Dernière Mise à Jour" %}:</strong> {{ stock.updated_at|date:"d F Y H:i" }}</p>
+                        <p><strong>{% trans "Solde Actuel" %}:</strong>
                             <span class="fw-bold fs-4 {% if stock.amount < 100 %}text-warning{% elif stock.amount < 50 %}text-danger{% else %}text-success{% endif %}">
                                 {{ stock.amount|floatformat:2 }} {{ stock.currency }}
                             </span>
@@ -54,21 +55,21 @@
     <div class="col-md-4">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">Movement Statistics</h5>
+                <h5 class="mb-0">{% trans "Statistiques des Mouvements" %}</h5>
             </div>
             <div class="card-body">
                 <div class="text-center mb-3">
-                    <h6 class="text-muted">Total Movements</h6>
+                    <h6 class="text-muted">{% trans "Total des Mouvements" %}</h6>
                     <h3 class="text-primary">{{ movement_stats.movement_count|default:0 }}</h3>
                 </div>
 
                 <div class="row text-center">
                     <div class="col-6">
-                        <h6 class="text-muted">Total In</h6>
+                        <h6 class="text-muted">{% trans "Total Entrant" %}</h6>
                         <h5 class="text-success">{{ movement_stats.total_in|default:0|floatformat:2 }}</h5>
                     </div>
                     <div class="col-6">
-                        <h6 class="text-muted">Total Out</h6>
+                        <h6 class="text-muted">{% trans "Total Sortant" %}</h6>
                         <h5 class="text-danger">{{ movement_stats.total_out|default:0|floatformat:2 }}</h5>
                     </div>
                 </div>
@@ -83,7 +84,7 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="bi bi-clock-history"></i> Recent Movements
+                    <i class="bi bi-clock-history"></i> {% trans "Mouvements Récents" %}
                 </h5>
             </div>
             <div class="card-body">
@@ -92,12 +93,12 @@
                         <table class="table table-hover">
                             <thead>
                                 <tr>
-                                    <th>Type</th>
-                                    <th>Amount</th>
-                                    <th>Destination</th>
-                                    <th>Reason</th>
-                                    <th>Created By</th>
-                                    <th>Date</th>
+                                    <th>{% trans "Type" %}</th>
+                                    <th>{% trans "Montant" %}</th>
+                                    <th>{% trans "Destination" %}</th>
+                                    <th>{% trans "Raison" %}</th>
+                                    <th>{% trans "Créé par" %}</th>
+                                    <th>{% trans "Date" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -120,7 +121,7 @@
                                                 {{ movement.destination_stock.currency }} - {{ movement.destination_stock.get_location_display }}
                                             </span>
                                             {% if movement.get_stock_transfer_rate != 1 %}
-                                                <br><small class="text-muted">Rate: {{ movement.get_stock_transfer_rate|floatformat:4 }}</small>
+                                                <br><small class="text-muted">{% trans "Taux" %}: {{ movement.get_stock_transfer_rate|floatformat:4 }}</small>
                                             {% endif %}
                                         {% else %}
                                             —
@@ -134,10 +135,10 @@
                                             <span class="badge bg-primary">{{ movement.created_by.get_user_type_display }}</span>
                                             {{ movement.created_by.get_full_name|default:movement.created_by.username }}
                                         {% else %}
-                                            <span class="text-muted">System</span>
+                                            <span class="text-muted">{% trans "Système" %}</span>
                                         {% endif %}
                                     </td>
-                                    <td class="text-muted">{{ movement.created_at|date:"M d, Y H:i" }}</td>
+                                    <td class="text-muted">{{ movement.created_at|date:"d M Y H:i" }}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -146,16 +147,16 @@
 
                     <div class="text-center mt-3">
                         <a href="{% url 'stock_movements' %}?stock={{ stock.id }}" class="btn btn-outline-primary">
-                            View All Movements for This Stock
+                            {% trans "Voir Tous les Mouvements pour ce Stock" %}
                         </a>
                     </div>
                 {% else %}
                     <div class="text-center py-4">
                         <i class="bi bi-clock-history display-1 text-muted"></i>
-                        <h4 class="mt-3">No movements yet</h4>
-                        <p class="text-muted">Start by adding your first stock movement.</p>
+                        <h4 class="mt-3">{% trans "Aucun mouvement pour l'instant" %}</h4>
+                        <p class="text-muted">{% trans "Commencez par ajouter votre premier mouvement de stock." %}</p>
                         <a href="{% url 'create_stock_movement' stock.id %}" class="btn btn-primary">
-                            <i class="bi bi-plus-minus"></i> Add Movement
+                            <i class="bi bi-plus-minus"></i> {% trans "Ajouter un Mouvement" %}
                         </a>
                     </div>
                 {% endif %}

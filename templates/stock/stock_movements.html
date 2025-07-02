@@ -1,16 +1,17 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}Stock Movements - Money Transfer App{% endblock %}
+{% block title %}{% trans "Mouvements de Stock" %} - {% trans "Application de Transfert d'Argent" %}{% endblock %}
 
 {% block content %}
 <div class="row">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>
-                <i class="bi bi-clock-history"></i> Stock Movements
+                <i class="bi bi-clock-history"></i> {% trans "Mouvements de Stock" %}
             </h1>
             <a href="{% url 'stock_list' %}" class="btn btn-secondary">
-                <i class="bi bi-arrow-left"></i> Back to Stocks
+                <i class="bi bi-arrow-left"></i> {% trans "Retour aux Stocks" %}
             </a>
         </div>
     </div>
@@ -22,15 +23,15 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="bi bi-funnel"></i> Filters
+                    <i class="bi bi-funnel"></i> {% trans "Filtres" %}
                 </h5>
             </div>
             <div class="card-body">
                 <form method="get" class="row g-3">
                     <div class="col-md-4">
-                        <label class="form-label">Stock</label>
+                        <label class="form-label">{% trans "Stock" %}</label>
                         <select name="stock" class="form-select">
-                            <option value="">All Stocks</option>
+                            <option value="">{% trans "Tous les Stocks" %}</option>
                             {% for stock in stocks %}
                                 <option value="{{ stock.id }}" {% if current_stock == stock.id|stringformat:"s" %}selected{% endif %}>
                                     {{ stock.currency }} - {{ stock.get_location_display }}
@@ -40,21 +41,21 @@
                         </select>
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">Type</label>
+                        <label class="form-label">{% trans "Type" %}</label>
                         <select name="type" class="form-select">
-                            <option value="">All Types</option>
-                            <option value="IN" {% if current_type == 'IN' %}selected{% endif %}>Entrée</option>
-                            <option value="OUT" {% if current_type == 'OUT' %}selected{% endif %}>Sortie</option>
+                            <option value="">{% trans "Tous les Types" %}</option>
+                            <option value="IN" {% if current_type == 'IN' %}selected{% endif %}>{% trans "Entrée" %}</option>
+                            <option value="OUT" {% if current_type == 'OUT' %}selected{% endif %}>{% trans "Sortie" %}</option>
                         </select>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">&nbsp;</label>
                         <div>
                             <button type="submit" class="btn btn-outline-primary">
-                                <i class="bi bi-funnel"></i> Filter
+                                <i class="bi bi-funnel"></i> {% trans "Filtrer" %}
                             </button>
                             <a href="{% url 'stock_movements' %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-x"></i> Clear
+                                <i class="bi bi-x"></i> {% trans "Effacer" %}
                             </a>
                         </div>
                     </div>
@@ -74,14 +75,14 @@
                         <table class="table table-hover">
                             <thead>
                                 <tr>
-                                    <th>Stock</th>
-                                    <th>Type</th>
-                                    <th>Amount</th>
-                                    <th>Destination</th>
-                                    <th>Rate</th>
-                                    <th>Reason</th>
-                                    <th>Created By</th>
-                                    <th>Date</th>
+                                    <th>{% trans "Stock" %}</th>
+                                    <th>{% trans "Type" %}</th>
+                                    <th>{% trans "Montant" %}</th>
+                                    <th>{% trans "Destination" %}</th>
+                                    <th>{% trans "Taux" %}</th>
+                                    <th>{% trans "Raison" %}</th>
+                                    <th>{% trans "Créé Par" %}</th>
+                                    <th>{% trans "Date" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -124,12 +125,12 @@
                                         {% if movement.destination_stock and movement.stock.currency != movement.destination_stock.currency %}
                                             {% if movement.custom_exchange_rate %}
                                                 <span class="text-info">{{ movement.custom_exchange_rate|floatformat:4 }}</span>
-                                                <small class="text-muted d-block">Custom</small>
+                                                <small class="text-muted d-block">{% trans "Personnalisé" %}</small>
                                             {% else %}
                                                 {% with movement.get_stock_transfer_rate as rate %}
                                                     {% if rate %}
                                                         {{ rate|floatformat:4 }}
-                                                        <small class="text-muted d-block">System</small>
+                                                        <small class="text-muted d-block">{% trans "Système" %}</small>
                                                     {% else %}
                                                         <span class="text-muted">—</span>
                                                     {% endif %}
@@ -155,11 +156,11 @@
                                             </span>
                                             <br><small>{{ movement.created_by.get_full_name|default:movement.created_by.username }}</small>
                                         {% else %}
-                                            <span class="text-muted">System</span>
+                                            <span class="text-muted">{% trans "Système" %}</span>
                                         {% endif %}
                                     </td>
                                     <td class="text-muted">
-                                        {{ movement.created_at|date:"M d, Y" }}
+                                        {{ movement.created_at|date:"d M Y" }}
                                         <br><small>{{ movement.created_at|time:"H:i" }}</small>
                                     </td>
                                 </tr>
@@ -171,22 +172,22 @@
                     {% if movements|length == 50 %}
                     <div class="alert alert-info mt-3">
                         <i class="bi bi-info-circle"></i>
-                        Showing the most recent 50 movements. Use filters to narrow down results.
+                        {% trans "Affichage des 50 mouvements les plus récents. Utilisez les filtres pour affiner les résultats." %}
                     </div>
                     {% endif %}
                 {% else %}
                     <div class="text-center py-5">
                         <i class="bi bi-clock-history display-1 text-muted"></i>
-                        <h4 class="mt-3">No movements found</h4>
+                        <h4 class="mt-3">{% trans "Aucun mouvement trouvé" %}</h4>
                         <p class="text-muted">
                             {% if current_stock or current_type %}
-                                No movements match your current filters.
+                                {% trans "Aucun mouvement ne correspond à vos filtres actuels." %}
                             {% else %}
-                                No stock movements have been recorded yet.
+                                {% trans "Aucun mouvement de stock n'a encore été enregistré." %}
                             {% endif %}
                         </p>
                         <a href="{% url 'stock_list' %}" class="btn btn-primary">
-                            <i class="bi bi-bank"></i> Go to Stocks
+                            <i class="bi bi-bank"></i> {% trans "Aller aux Stocks" %}
                         </a>
                     </div>
                 {% endif %}

@@ -1,36 +1,37 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}Add Stock Movement - Money Transfer App{% endblock %}
+{% block title %}{% trans "Ajouter un Mouvement de Stock - Application de Transfert d'Argent" %}{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
+<div class="row justify-content-center">
+    <div class="col-8">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>
-                <i class="bi bi-plus-minus"></i> Add Stock Movement
-            </h1>
+            <h2>
+                <i class="bi bi-plus-minus"></i> {% trans "Ajouter un Mouvement de Stock" %}
+            </h2>
             <a href="{% url 'stock_detail' stock.id %}" class="btn btn-secondary">
-                <i class="bi bi-arrow-left"></i> Back to Stock
+                <i class="bi bi-arrow-left"></i> {% trans "Retour au Stock" %}
             </a>
         </div>
     </div>
 </div>
 
 <!-- Stock Info -->
-<div class="row mb-4">
-    <div class="col-12">
+<div class="row justify-content-center mb-4">
+    <div class="col-8">
         <div class="card bg-light">
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-3">
-                        <strong>Stock:</strong> {{ stock.currency }} - {{ stock.get_location_display }}
+                    <div class="col-md-4">
+                        <strong>{% trans "Stock" %}:</strong> {{ stock.currency }} - {{ stock.get_location_display }}
                     </div>
-                    <div class="col-md-3">
-                        <strong>Current Balance:</strong>
+                    <div class="col-md-4">
+                        <strong>{% trans "Solde Actuel" %}:</strong>
                         <span class="fw-bold text-primary">{{ stock.amount|floatformat:2 }} {{ stock.currency }}</span>
                     </div>
-                    <div class="col-md-6">
-                        <strong>Name:</strong> {{ stock.name|default:"—" }}
+                    <div class="col-md-4">
+                        <strong>{% trans "Nom" %}:</strong> {{ stock.name|default:"—" }}
                     </div>
                 </div>
             </div>
@@ -42,7 +43,7 @@
     <div class="col-md-8">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">Movement Details</h5>
+                <h5 class="mb-0">{% trans "Détails du Mouvement" %}</h5>
             </div>
             <div class="card-body">
                 <form method="post" id="movementForm" autocomplete="off">
@@ -51,7 +52,7 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="{{ form.type.id_for_label }}" class="form-label">Movement Type *</label>
+                                <label for="{{ form.type.id_for_label }}" class="form-label">{% trans "Type de Mouvement" %} *</label>
                                 {{ form.type }}
                                 {% if form.type.errors %}
                                     <div class="text-danger small mt-1">
@@ -63,7 +64,7 @@
 
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="{{ form.amount.id_for_label }}" class="form-label">Amount *</label>
+                                <label for="{{ form.amount.id_for_label }}" class="form-label">{% trans "Montant" %} *</label>
                                 {{ form.amount }}
                                 {% if form.amount.errors %}
                                     <div class="text-danger small mt-1">
@@ -75,7 +76,7 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="{{ form.reason.id_for_label }}" class="form-label">Reason</label>
+                        <label for="{{ form.reason.id_for_label }}" class="form-label">{% trans "Raison" %}</label>
                         {{ form.reason }}
                         {% if form.reason.errors %}
                             <div class="text-danger small mt-1">
@@ -88,13 +89,13 @@
                     <div id="transferSection" style="display: none;">
                         <div class="card bg-light mb-3">
                             <div class="card-header">
-                                <h6 class="mb-0">Transfer to Another Stock</h6>
+                                <h6 class="mb-0">{% trans "Transférer à un Autre Stock" %}</h6>
                             </div>
                             <div class="card-body">
                                 <div class="mb-3">
-                                    <label for="{{ form.destination_stock.id_for_label }}" class="form-label">Destination Stock</label>
+                                    <label for="{{ form.destination_stock.id_for_label }}" class="form-label">{% trans "Stock de Destination" %}</label>
                                     {{ form.destination_stock }}
-                                    <div class="form-text">Select destination stock for transfer (optional)</div>
+                                    <div class="form-text">{% trans "Sélectionnez le stock de destination pour le transfert (facultatif)" %}</div>
                                     {% if form.destination_stock.errors %}
                                         <div class="text-danger small mt-1">
                                             {{ form.destination_stock.errors.0 }}
@@ -103,9 +104,9 @@
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="{{ form.custom_exchange_rate.id_for_label }}" class="form-label">Custom Exchange Rate</label>
+                                    <label for="{{ form.custom_exchange_rate.id_for_label }}" class="form-label">{% trans "Taux de Change Personnalisé" %}</label>
                                     {{ form.custom_exchange_rate }}
-                                    <div class="form-text">Only needed for different currency transfers</div>
+                                    <div class="form-text">{% trans "Requis uniquement pour les transferts entre devises différentes" %}</div>
                                     {% if form.custom_exchange_rate.errors %}
                                         <div class="text-danger small mt-1">
                                             {{ form.custom_exchange_rate.errors.0 }}
@@ -119,13 +120,13 @@
                     <!-- Balance Preview -->
                     <div class="alert alert-info" id="balancePreview">
                         <i class="bi bi-calculator"></i>
-                        <strong>New Balance Preview:</strong> <span id="newBalance">{{ stock.amount|floatformat:2 }}</span> {{ stock.currency }}
+                        <strong>{% trans "Aperçu du Nouveau Solde" %}:</strong> <span id="newBalance">{{ stock.amount|floatformat:2 }}</span> {{ stock.currency }}
                     </div>
 
                     <div class="d-flex justify-content-end gap-2">
-                        <a href="{% url 'stock_detail' stock.id %}" class="btn btn-secondary">Cancel</a>
+                        <a href="{% url 'stock_detail' stock.id %}" class="btn btn-secondary">{% trans "Annuler" %}</a>
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check-lg"></i> Add Movement
+                            <i class="bi bi-check-lg"></i> {% trans "Ajouter un Mouvement" %}
                         </button>
                     </div>
                 </form>

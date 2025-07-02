@@ -1,20 +1,21 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}Stock Management - Money Transfer App{% endblock %}
+{% block title %}{% trans "Gestion du Stock" %} - {% trans "Application de Transfert d'Argent" %}{% endblock %}
 
 {% block content %}
 <div class="row">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>
-                <i class="bi bi-bank"></i> Stock Management
+                <i class="bi bi-bank"></i> {% trans "Gestion du Stock" %}
             </h1>
             <div>
                 <a href="{% url 'stock_movements' %}" class="btn btn-outline-info me-2">
-                    <i class="bi bi-clock-history"></i> View Movements
+                    <i class="bi bi-clock-history"></i> {% trans "Voir Mouvements" %}
                 </a>
                 <a href="{% url 'create_stock' %}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> Create Stock
+                    <i class="bi bi-plus-circle"></i> {% trans "Créer Stock" %}
                 </a>
             </div>
         </div>
@@ -28,7 +29,7 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="bi bi-bar-chart"></i> Total by Currency
+                    <i class="bi bi-bar-chart"></i> {% trans "Total par Devise" %}
                 </h5>
             </div>
             <div class="card-body">
@@ -58,13 +59,13 @@
                         <table class="table table-hover">
                             <thead>
                                 <tr>
-                                    <th>Name</th>
-                                    <th>Currency</th>
-                                    <th>Location</th>
-                                    <th>Amount</th>
-                                    <th>Created</th>
-                                    <th>Updated</th>
-                                    <th>Actions</th>
+                                    <th>{% trans "Nom" %}</th>
+                                    <th>{% trans "Devise" %}</th>
+                                    <th>{% trans "Localisation" %}</th>
+                                    <th>{% trans "Montant" %}</th>
+                                    <th>{% trans "Créé" %}</th>
+                                    <th>{% trans "Mis à Jour" %}</th>
+                                    <th>{% trans "Actions" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -87,15 +88,15 @@
                                         </span>
                                         {{ stock.currency }}
                                     </td>
-                                    <td class="text-muted">{{ stock.created_at|date:"M d, Y" }}</td>
-                                    <td class="text-muted">{{ stock.updated_at|date:"M d, Y H:i" }}</td>
+                                    <td class="text-muted">{{ stock.created_at|date:"d M Y" }}</td>
+                                    <td class="text-muted">{{ stock.updated_at|date:"d M Y H:i" }}</td>
                                     <td>
                                         <div class="btn-group btn-group-sm" role="group">
                                             <a href="{% url 'stock_detail' stock.id %}" class="btn btn-outline-primary">
                                                 <i class="bi bi-eye"></i>
                                             </a>
                                             <a href="{% url 'create_stock_movement' stock.id %}" class="btn btn-outline-success">
-                                                <i class="bi bi-plus-minus"></i>
+                                                <i class="bi bi-plus"></i>
                                             </a>
                                         </div>
                                     </td>
@@ -107,10 +108,10 @@
                 {% else %}
                     <div class="text-center py-5">
                         <i class="bi bi-bank display-1 text-muted"></i>
-                        <h4 class="mt-3">No stocks created</h4>
-                        <p class="text-muted">Create your first stock to start managing money balances.</p>
+                        <h4 class="mt-3">{% trans "Aucun stock créé" %}</h4>
+                        <p class="text-muted">{% trans "Créez votre premier stock pour commencer à gérer les soldes d'argent." %}</p>
                         <a href="{% url 'create_stock' %}" class="btn btn-primary">
-                            <i class="bi bi-plus-circle"></i> Create Stock
+                            <i class="bi bi-plus-circle"></i> {% trans "Créer Stock" %}
                         </a>
                     </div>
                 {% endif %}
@@ -125,29 +126,29 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="bi bi-lightning"></i> Quick Actions
+                    <i class="bi bi-lightning"></i> {% trans "Actions Rapides" %}
                 </h5>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-3 mb-2">
                         <a href="{% url 'create_stock' %}" class="btn btn-outline-primary w-100">
-                            <i class="bi bi-plus-circle"></i> Create Stock
+                            <i class="bi bi-plus-circle"></i> {% trans "Créer Stock" %}
                         </a>
                     </div>
                     <div class="col-md-3 mb-2">
                         <a href="{% url 'stock_movements' %}" class="btn btn-outline-info w-100">
-                            <i class="bi bi-clock-history"></i> All Movements
+                            <i class="bi bi-clock-history"></i> {% trans "Tous les Mouvements" %}
                         </a>
                     </div>
                     <div class="col-md-3 mb-2">
                         <a href="{% url 'exchange_rate_list' %}" class="btn btn-outline-warning w-100">
-                            <i class="bi bi-currency-exchange"></i> Exchange Rates
+                            <i class="bi bi-currency-exchange"></i> {% trans "Taux de Change" %}
                         </a>
                     </div>
                     <div class="col-md-3 mb-2">
                         <a href="{% url 'create_exchange_rate' %}" class="btn btn-outline-success w-100">
-                            <i class="bi bi-plus"></i> Add Rate
+                            <i class="bi bi-plus"></i> {% trans "Ajouter Taux" %}
                         </a>
                     </div>
                 </div>

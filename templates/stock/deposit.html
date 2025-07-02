@@ -1,59 +1,244 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %} Declare Money Deposit to a Manager {% endblock %}
+{% block title %}{% trans "Déclarer Dépôt d'Argent" %} - {% trans "Application de Transfert d'Argent" %}{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-6">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">💰 Dépôt d'argent dans un stock</h5>
-                </div>
+<div class="row justify-content-center ">
+    <div class="col-10">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="bi bi-cash-coin"></i> {% trans "Déclarer Dépôt d'Argent" %}
+            </h1>
+            <a href="{% url 'stock_list' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> {% trans "Retour aux Stocks" %}
+            </a>
+        </div>
+    </div>
+</div>
 
-                <div class="card-body">
-                    {% if messages %}
-                        {% for message in messages %}
-                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+{% if form.non_field_errors %}
+<div class="row justify-content-center mb-3">
+    <div class="col-10">
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-circle"></i>
+            {% for error in form.non_field_errors %}
+                <div>{{ error }}</div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-info-circle"></i> {% trans "Informations du Dépôt" %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" autocomplete="off" id="deposit-form" novalidate>
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label for="{{ form.stock.id_for_label }}" class="form-label">{% trans "Stock de Destination" %} *</label>
+                        {{ form.stock }}
+                        <div class="form-text">{% trans "Sélectionnez le stock où déposer l'argent" %}</div>
+                        {% if form.stock.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ form.stock.errors.0 }}
                             </div>
-                        {% endfor %}
-                    {% endif %}
+                        {% endif %}
+                    </div>
 
-                    {% if form.non_field_errors %}
-                        <div class="alert alert-danger py-2 px-3 rounded small">
-                            {% for error in form.non_field_errors %}
-                                <div>{{ error }}</div>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-
-                    <form method="post" novalidate autocomplete="off">
-                        {% csrf_token %}
-                        {% for field in form %}
-                            <div class="mb-3">
-                                <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-                                {{ field }}
-                                {% if field.errors %}
-                                    <div class="text-danger small">
-                                        {% for error in field.errors %}
-                                            <div>{{ error }}</div>
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
+                    <div class="mb-3">
+                        <label for="{{ form.amount.id_for_label }}" class="form-label">{% trans "Montant" %} *</label>
+                        {{ form.amount }}
+                        <div class="form-text">{% trans "Montant à déposer dans le stock" %}</div>
+                        {% if form.amount.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ form.amount.errors.0 }}
                             </div>
-                        {% endfor %}
+                        {% endif %}
+                    </div>
 
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-success">
-                                <i class="bi bi-plus-circle me-1"></i> Valider le dépôt
-                            </button>
-                        </div>
-                    </form>
+                    <div class="mb-3">
+                        <label for="{{ form.reason.id_for_label }}" class="form-label">{% trans "Raison du Dépôt" %}</label>
+                        {{ form.reason }}
+                        <div class="form-text">{% trans "Raison optionnelle pour ce dépôt" %}</div>
+                        {% if form.reason.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ form.reason.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Info Alert -->
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>{% trans "Information" %} :</strong> {% trans "Ce dépôt sera ajouté au stock sélectionné et créera un mouvement de stock automatiquement." %}
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'stock_list' %}" class="btn btn-secondary">{% trans "Annuler" %}</a>
+                        <button type="submit" class="btn btn-success" id="submit-btn">
+                            <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                            <i class="bi bi-plus-circle"></i> {% trans "Valider le Dépôt" %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row justify-content-center  mt-4">
+    <div class="col-10">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightning"></i> {% trans "Actions Rapides" %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'stock_list' %}" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-bank"></i> {% trans "Voir Stocks" %}
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'stock_movements' %}" class="btn btn-outline-info w-100">
+                            <i class="bi bi-clock-history"></i> {% trans "Mouvements" %}
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'create_stock' %}" class="btn btn-outline-success w-100">
+                            <i class="bi bi-plus-circle"></i> {% trans "Créer Stock" %}
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary w-100">
+                            <i class="bi bi-house"></i> {% trans "Tableau de Bord" %}
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('deposit-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const spinner = submitBtn.querySelector('.spinner-border');
+
+    form.addEventListener('submit', (e) => {
+        // Client-side validation
+        const requiredFields = ['stock', 'amount'];
+        let isValid = true;
+
+        requiredFields.forEach(fieldName => {
+            const input = form.querySelector(`[name="${fieldName}"]`);
+            const errorDiv = input.nextElementSibling?.classList.contains('text-danger')
+                ? input.nextElementSibling
+                : null;
+
+            if (errorDiv) {
+                errorDiv.remove();
+            }
+
+            if (!input.value.trim()) {
+                isValid = false;
+                const error = document.createElement('div');
+                error.className = 'text-danger small mt-1';
+                error.textContent = '{% trans "Ce champ est requis" %}';
+                input.classList.add('is-invalid');
+                input.parentNode.appendChild(error);
+            } else {
+                input.classList.remove('is-invalid');
+                input.classList.add('is-valid');
+            }
+
+            // Validate amount is positive
+            if (fieldName === 'amount' && input.value.trim()) {
+                const amount = parseFloat(input.value);
+                if (amount <= 0) {
+                    isValid = false;
+                    const error = document.createElement('div');
+                    error.className = 'text-danger small mt-1';
+                    error.textContent = '{% trans "Le montant doit être positif" %}';
+                    input.classList.add('is-invalid');
+                    input.classList.remove('is-valid');
+                    input.parentNode.appendChild(error);
+                }
+            }
+        });
+
+        if (!isValid) {
+            e.preventDefault();
+            return;
+        }
+
+        // Show loading state
+        submitBtn.disabled = true;
+        spinner.classList.remove('d-none');
+    });
+
+    // Real-time validation
+    form.querySelectorAll('input, select').forEach(input => {
+        input.addEventListener('input', () => {
+            const errorDiv = input.nextElementSibling?.classList.contains('text-danger')
+                ? input.nextElementSibling
+                : null;
+
+            if (errorDiv) {
+                errorDiv.remove();
+            }
+
+            if (input.value.trim()) {
+                if (input.name === 'amount') {
+                    const amount = parseFloat(input.value);
+                    if (amount > 0) {
+                        input.classList.add('is-valid');
+                        input.classList.remove('is-invalid');
+                    } else {
+                        input.classList.add('is-invalid');
+                        input.classList.remove('is-valid');
+                    }
+                } else {
+                    input.classList.add('is-valid');
+                    input.classList.remove('is-invalid');
+                }
+            } else if (input.required) {
+                input.classList.add('is-invalid');
+                input.classList.remove('is-valid');
+            }
+        });
+    });
+});
+</script>
+<style>
+.is-valid {
+    border-color: #28a745 !important;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%2328a745' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4.3 4.8c-.4.43-1.1.43-1.7 0z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right calc(0.375em + 0.1875rem) center;
+    background-size: 1.125rem;
+}
+
+.is-invalid {
+    border-color: #dc3545 !important;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right calc(0.375em + 0.1875rem) center;
+    background-size: 1.125rem;
+}
+</style>
 {% endblock %}
