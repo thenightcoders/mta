@@ -70,7 +70,7 @@
                                 <div class="btn-group btn-group-sm" role="group">
                                     <!-- Edit Button -->
                                     <a href="{% url 'update_user' user_obj.id %}" class="btn btn-outline-primary"
-                                       title="{% trans "Modifier l'Utilisateur" %}">
+                                       title="{% trans 'Modifier Utilisateur' %}">
                                         <i class="bi bi-pencil"></i>
                                     </a>
 
@@ -79,7 +79,7 @@
                                     <button type="button"
                                             class="btn btn-outline-{% if user_obj.is_active_user %}warning{% else %}success{% endif %}"
                                             onclick="toggleUserStatus({{ user_obj.id }}, '{{ user_obj.username }}')"
-                                            title="{% if user_obj.is_active_user %}{% trans "Désactiver" %}{% else %}{% trans "Activer" %}{% endif %} {% trans "l'Utilisateur" %}"
+                                            title="{% if user_obj.is_active_user %}{% trans 'Désactiver' %}{% else %}{% trans 'Activer' %}{% endif %} {% trans 'Utilisateur' %}"
                                             id="toggle-btn-{{ user_obj.id }}">
                                         <i class="bi bi-{% if user_obj.is_active_user %}pause-circle{% else %}play-circle{% endif %}"></i>
                                     </button>
@@ -88,7 +88,7 @@
                                     <button type="button"
                                             class="btn btn-outline-danger"
                                             onclick="deleteUser({{ user_obj.id }}, '{{ user_obj.username }}')"
-                                            title="{% trans "Supprimer l'Utilisateur" %}">
+                                            title="{% trans 'Supprimer Utilisateur' %}">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                     {% endif %}
@@ -147,13 +147,13 @@
                             badge.className = 'badge bg-success';
                             badge.textContent = '{% trans "Actif" %}';
                             button.className = 'btn btn-outline-warning';
-                            button.title = '{% trans "Désactiver l'Utilisateur" %}';
+                            button.title = '{% trans "Désactiver Utilisateur" %}';
                             button.innerHTML = '<i class="bi bi-pause-circle"></i>';
                         } else {
                             badge.className = 'badge bg-danger';
                             badge.textContent = '{% trans "Inactif" %}';
                             button.className = 'btn btn-outline-success';
-                            button.title = '{% trans "Activer l'Utilisateur" %}';
+                            button.title = '{% trans "Activer Utilisateur" %}';
                             button.innerHTML = '<i class="bi bi-play-circle"></i>';
                         }
 
