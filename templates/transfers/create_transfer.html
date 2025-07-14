@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load i18n %}
 
-{% block title %}{% trans "Déclarer Nouveau Transfert" %} - {% trans "Application de Transfert d'Argent" %}{% endblock %}
+{% block title %}{% trans "Déclarer Nouveau Transfert" %} - {{ site_name }}{% endblock %}
 
 {% block content %}
 {% if form.non_field_errors %}

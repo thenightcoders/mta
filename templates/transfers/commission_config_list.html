@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load i18n %}
 
-{% block title %}{% trans "Configurations Commission" %} - {% trans "Application de Transfert d'Argent" %}{% endblock %}
+{% block title %}{% trans "Configurations Commission" %} - {{ site_name }}{% endblock %}
 
 {% block content %}
 {% csrf_token %}
