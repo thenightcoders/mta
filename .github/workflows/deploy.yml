@@ -17,16 +17,28 @@ jobs:
 
     steps:
     - name: 🚀 Deploy to server
-      uses: appleboy/ssh-action@v1.0.3
+      uses: appleboy/ssh-action@v1.2.2
       with:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: ${{ secrets.PORT }}
         script: |
+          # Navigate to project directory
           cd /home/web/web/mta
+          
+          # Pull latest changes
           git pull origin main
-          bash /home/web/scripts/reload_websites_specific.sh mta
+          
+          # Run the smart reload script (now with passwordless sudo)
+          sudo /home/web/scripts/reload_websites_specific.sh mta
+          
+          # Verify services are running
+          echo "🔍 Checking service status..."
+          sudo systemctl is-active mta.thenightcoders.service || echo "Main service not active"
+          sudo systemctl is-active mta.thenightcoders.djangoq.service || echo "Django Q service not active"
+          
+          echo "🎉 MTA deployment completed successfully!"
 
   notify:
     name: Notify Deployment Status
