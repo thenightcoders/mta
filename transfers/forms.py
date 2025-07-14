@@ -26,7 +26,7 @@ class TransferForm(forms.ModelForm):
         self.fields['beneficiary_name'].widget.attrs['placeholder'] = 'Nom complet bénéficiaire'
         self.fields['beneficiary_phone'].widget.attrs['placeholder'] = '+257XXXXXXXX'
         self.fields['amount'].widget.attrs['placeholder'] = '0.00'
-        self.fields['comment'].widget.attrs['placeholder'] = 'Optional comments...'
+        self.fields['comment'].widget.attrs['placeholder'] = 'Commentaires [optionnel]...'
         self.fields['comment'].widget.attrs['rows'] = 3
 
 
