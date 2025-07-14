@@ -32,7 +32,7 @@
                                     <th>{% trans "Plage de Montant" %}</th>
                                     <th>{% trans "Taux Commission" %}</th>
                                     <th>{% trans "Part Agent" %}</th>
-                                    <th>{% trans "Part Gestionnaire" %}</th>
+                                    <th>{% trans "Part Manager" %}</th>
                                     <th>{% trans "Statut" %}</th>
                                     <th>{% trans "Actions" %}</th>
                                 </tr>
@@ -132,7 +132,7 @@
             <h6 class="mb-2"><i class="bi bi-info-circle"></i> {% trans "Comment Fonctionne la Commission" %}</h6>
             <p class="mb-1"><strong>{% trans "Taux de Commission" %} :</strong> {% trans "Pourcentage prélevé sur le montant du transfert (ex: 3% de 100 EUR = 3 EUR de commission totale)" %}</p>
             <p class="mb-1"><strong>{% trans "Part Agent" %} :</strong> {% trans "Pourcentage de commission allant à l'agent (ex: 40% de 3 EUR = 1,20 EUR à l'agent)" %}</p>
-            <p class="mb-0"><strong>{% trans "Part Gestionnaire" %} :</strong> {% trans "Le reste de la commission va au gestionnaire (ex: 60% de 3 EUR = 1,80 EUR au gestionnaire)" %}</p>
+            <p class="mb-0"><strong>{% trans "Part Manager" %} :</strong> {% trans "Le reste de la commission va au manager (ex: 60% de 3 EUR = 1,80 EUR au manager)" %}</p>
         </div>
     </div>
 </div>
@@ -365,7 +365,7 @@ function calculateCommission() {
                     '<div class="fw-bold text-success">' + agentAmount.toFixed(2) + ' ' + currency + '</div>' +
                 '</div>' +
                 '<div class="col-6 col-md-3">' +
-                    '<small class="text-muted">{% trans "Gestionnaire Reçoit" %}:</small>' +
+                    '<small class="text-muted">{% trans "Manager Reçoit" %}:</small>' +
                     '<div class="fw-bold text-info">' + managerAmount.toFixed(2) + ' ' + currency + '</div>' +
                 '</div>' +
                 '<div class="col-6 col-md-3">' +
