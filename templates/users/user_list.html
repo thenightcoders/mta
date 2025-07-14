@@ -52,8 +52,8 @@
                             </td>
                             <td>{{ user_obj.get_full_name|default:"-" }}</td>
                             <td>
-                                <span class="badge bg-{% if user.is_superuser %}danger{% elif user.is_manager %}success{% else %}primary{% endif %} ms-1">
-                                    {% if user.is_superuser %}Admin{% else %}{{ user.get_user_type_display }}{% endif %}
+                                <span class="badge bg-{% if user_obj.is_superuser %}danger{% elif user_obj.is_manager %}success{% else %}primary{% endif %} ms-1">
+                                    {% if user_obj.is_superuser %}Admin{% else %}{{ user_obj.get_user_type_display }}{% endif %}
                                 </span>
                             </td>
                             <td>{{ user_obj.email|default:"-" }}</td>
