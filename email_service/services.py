@@ -5,7 +5,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from .tasks import (send_admin_notification_task, send_template_email_task)
-from .utils import (build_email_context, get_email_template_path, has_email_settings, should_use_async_email)
+from .utils import (build_email_context, get_email_template_path, has_required_email_settings, should_use_async_email)
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ def send_password_setup_email(user_id: int, base_url: str) -> bool:
         bool: True if email was sent/queued successfully
     """
     try:
-        if not has_email_settings():
+        if not has_required_email_settings():
             logger.warning(f"Email not configured, cannot send setup email to user {user_id}")
             return False
 
@@ -127,7 +127,7 @@ def send_user_notification_email(user_id: int, notification_type: str,
         bool: True if email was sent/queued successfully
     """
     try:
-        if not has_email_settings():
+        if not has_required_email_settings():
             logger.warning(f"Email not configured, cannot send notification to user {user_id}")
             return False
 
@@ -286,7 +286,7 @@ def send_admin_notification(subject: str, message: str, notification_type: str =
         bool: True if email was sent/queued successfully
     """
     try:
-        if not has_email_settings():
+        if not has_required_email_settings():
             logger.warning("Email not configured, cannot send admin notification")
             return False
 
@@ -364,7 +364,7 @@ def send_bulk_user_emails(email_list: List[Dict[str, Any]]) -> Dict[str, Any]:
         Dict: Results summary with success/failure counts
     """
     try:
-        if not has_email_settings():
+        if not has_required_email_settings():
             logger.warning("Email not configured, cannot send bulk emails")
             return {'success': 0, 'failed': len(email_list), 'total': len(email_list)}
 
