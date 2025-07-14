@@ -4,15 +4,10 @@ Contains only the task functions that are called by django-q2.
 """
 import logging
 from typing import List, Optional
-from django.core.mail import send_mail, EmailMessage
-from django.conf import settings
 
-from .utils import (
-    has_email_settings,
-    validate_email_data,
-    get_email_from_address,
-    log_email_attempt
-)
+from django.core.mail import EmailMessage, send_mail
+
+from .utils import (get_email_from_address, has_required_email_settings, log_email_attempt, validate_email_data)
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +35,7 @@ def send_email_task(recipient_list: List[str], subject: str, message: Optional[s
     """
     try:
         # Pre-flight checks
-        if not has_email_settings():
+        if not has_required_email_settings():
             logger.error("Email settings not configured")
             log_email_attempt(recipient_list, subject, False, "Email settings not configured")
             return False
