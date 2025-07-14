@@ -31,7 +31,7 @@ jobs:
           git pull origin main
           
           # Run the smart reload script (now with passwordless sudo)
-          sudo /home/web/scripts/reload_websites_specific.sh mta
+          bash /home/web/scripts/reload_websites_specific.sh mta
           
           # Verify services are running
           echo "🔍 Checking service status..."
