@@ -127,31 +127,43 @@
                         <li><a class="dropdown-item" href="{% url 'stock_movements' %}">
                             <i class="bi bi-clock-history"></i> {% trans "Mouvements de Stock" %}
                         </a></li>
-                        <li><a class="dropdown-item" href="{% url 'exchange_rate_list' %}">
-                            <i class="bi bi-currency-exchange"></i> {% trans "Taux de Change" %}
-                        </a></li>
-                        <li><a class="dropdown-item" href="{% url 'commission_config_list' %}">
-                            <i class="bi bi-percent"></i> {% trans "Configurations Commission" %}
+                        <li><a class="dropdown-item" href="{% url 'create_stock' %}">
+                            <i class="bi bi-plus-circle"></i> {% trans "Créer Stock" %}
                         </a></li>
                         <li>
                             <hr class="dropdown-divider">
                         </li>
-                        <li><a class="dropdown-item" href="{% url 'create_stock' %}">
-                            <i class="bi bi-plus-circle"></i> {% trans "Créer Stock" %}
+                        <li><a class="dropdown-item" href="{% url 'exchange_rate_list' %}">
+                            <i class="bi bi-currency-exchange"></i> {% trans "Taux de Change" %}
                         </a></li>
                         <li><a class="dropdown-item" href="{% url 'create_exchange_rate' %}">
                             <i class="bi bi-plus"></i> {% trans "Ajouter Taux de Change" %}
                         </a></li>
-                        <li><a class="dropdown-item" href="{% url 'create_commission_config' %}">
-                            <i class="bi bi-plus"></i> {% trans "Ajouter Config Commission" %}
-                        </a></li>
                     </ul>
                 </li>
                 {% endif %}
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'commissions_overview' %}">
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+                       aria-expanded="false">
                         <i class="bi bi-cash-stack"></i> {% trans "Commissions" %}
                     </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{% url 'commissions_overview' %}">
+                            <i class="bi bi-eye"></i> {% trans "Aperçu des Commissions" %}
+                        </a></li>
+                        {% if user.is_manager or user.is_superuser %}
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li><a class="dropdown-item" href="{% url 'commission_config_list' %}">
+                            <i class="bi bi-percent"></i> {% trans "Configurations Commission" %}
+                        </a></li>
+                        <li><a class="dropdown-item" href="{% url 'create_commission_config' %}">
+                            <i class="bi bi-plus"></i> {% trans "Ajouter Config Commission" %}
+                        </a></li>
+                        {% endif %}
+                    </ul>
                 </li>
             </ul>
 
@@ -160,9 +172,9 @@
                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
                        aria-expanded="false">
                         <i class="bi bi-person-circle"></i> {{ user.get_full_name|default:user.username }}
-                        <span class="badge bg-{% if user.is_manager %}success{% else %}primary{% endif %} ms-1">
-                                {{ user.get_user_type_display }}
-                            </span>
+                        <span class="badge bg-{% if user.is_superuser %}danger{% elif user.is_manager %}success{% else %}primary{% endif %} ms-1">
+                            {% if user.is_superuser %}Admin{% else %}{{ user.get_user_type_display }}{% endif %}
+                        </span>
                     </a>
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item" href="{% url 'profile' %}">
