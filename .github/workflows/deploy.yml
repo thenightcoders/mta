@@ -1,0 +1,48 @@
+name: Deploy MTA to Production
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    types: [closed]
+
+jobs:
+  deploy:
+    name: Deploy to Production Server
+    runs-on: ubuntu-latest
+
+    # Only deploy on push to main or when PR is merged to main
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event.pull_request.merged == true)
+
+    steps:
+    - name: 🚀 Deploy to server
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: ${{ secrets.PORT }}
+        script: |
+          cd /home/web/web/mta
+          git pull origin main
+          bash /home/web/scripts/reload_websites_specific.sh mta
+
+  notify:
+    name: Notify Deployment Status
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: always()
+
+    steps:
+    - name: 💬 Notify Success
+      if: needs.deploy.result == 'success'
+      run: |
+        echo "✅ MTA deployed successfully to production!"
+        echo "🌐 Site: https://mta.thenightcoders.tech"
+
+    - name: 🚨 Notify Failure
+      if: needs.deploy.result == 'failure'
+      run: |
+        echo "❌ MTA deployment failed!"
+        echo "Check the logs above for details."
