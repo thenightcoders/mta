@@ -4,11 +4,55 @@
 {% block title %}{% trans "Profil" %} - {% trans "Application de Transfert d'Argent" %}{% endblock %}
 
 {% block content %}
+<style>
+    .field-readonly {
+        background-color: #f8f9fa !important;
+        border: 1px solid #e9ecef !important;
+        color: #6c757d !important;
+        cursor: not-allowed;
+    }
+
+    .field-editable {
+        background-color: #fff !important;
+        border: 2px solid #198754 !important;
+        transition: all 0.2s ease;
+    }
+
+    .field-editable:focus {
+        border-color: #157347 !important;
+        box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25) !important;
+    }
+
+    .edit-indicator {
+        color: #198754;
+        font-weight: 500;
+        font-size: 0.85rem;
+    }
+
+    .readonly-indicator {
+        color: #6c757d;
+        font-size: 0.8rem;
+        font-style: italic;
+    }
+
+    .section-divider {
+        border-bottom: 2px solid #e9ecef;
+        margin: 1.5rem 0;
+        padding-bottom: 0.5rem;
+    }
+
+    .section-title {
+        color: #495057;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+</style>
+
 <div class="row">
     <div class="col-12">
-
     </div>
 </div>
+
 <div class="row justify-content-center">
     <div class="col-8">
         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -22,103 +66,212 @@
 <div class="row justify-content-center">
     <div class="col-md-8">
         <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">{% trans "Informations Personnelles" %}</h5>
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-person-circle"></i> {% trans "Informations Personnelles" %}
+                </h5>
             </div>
             <div class="card-body">
                 <form method="post">
                     {% csrf_token %}
 
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">{% trans "Nom d'utilisateur" %}</label>
-                                <input type="text" class="form-control" value="{{ user.username }}" readonly>
-                                <small class="text-muted">{% trans "Le nom d'utilisateur ne peut pas être modifié" %}</small>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">{% trans "Type d'Utilisateur" %}</label>
-                                <input type="text" class="form-control" value="{{ user.get_user_type_display }}" readonly>
-                            </div>
-                        </div>
+                    <!-- IDENTIFICATION SECTION -->
+                    <div class="section-title">
+                        <i class="bi bi-card-text"></i> {% trans "Identification" %}
                     </div>
 
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label">{% trans "Prénom" %}</label>
-                                {% if user.is_manager or user.is_superuser %}
-                                    <input type="text" class="form-control" name="first_name" value="{{ user.first_name }}" placeholder="{% trans 'Entrez votre prénom' %}">
-                                {% else %}
-                                    <input type="text" class="form-control" value="{{ user.first_name }}" readonly>
-                                    <small class="text-muted">{% trans "Contactez un gestionnaire pour modifier ceci" %}</small>
-                                {% endif %}
+                                <label class="form-label">
+                                    {% trans "Nom d'utilisateur" %}
+                                    <i class="bi bi-lock-fill text-muted ms-1"></i>
+                                </label>
+                                <input type="text" class="form-control field-readonly" value="{{ user.username }}" readonly>
+                                <small class="readonly-indicator">{% trans "Non modifiable" %}</small>
                             </div>
                         </div>
 
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label">{% trans "Nom de Famille" %}</label>
-                                {% if user.is_manager or user.is_superuser %}
-                                    <input type="text" class="form-control" name="last_name" value="{{ user.last_name }}" placeholder="{% trans 'Entrez votre nom de famille' %}">
+                                <label class="form-label">
+                                    {% trans "Type d'Utilisateur" %}
+                                    <i class="bi bi-lock-fill text-muted ms-1"></i>
+                                </label>
+                                {% if user.is_superuser %}
+                                    <input type="text" class="form-control field-readonly" value="{% trans 'Administrateur' %}" readonly>
                                 {% else %}
-                                    <input type="text" class="form-control" value="{{ user.last_name }}" readonly>
-                                    <small class="text-muted">{% trans "Contactez un gestionnaire pour modifier ceci" %}</small>
+                                    <input type="text" class="form-control field-readonly" value="{{ user.get_user_type_display }}" readonly>
+                                    <input type="hidden" name="user_type" value="{{ user.user_type }}">
                                 {% endif %}
+                                <small class="readonly-indicator">{% trans "Non modifiable" %}</small>
                             </div>
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">{% trans "Email" %}</label>
+                    <div class="section-divider"></div>
+
+                    <!-- PERSONAL INFO SECTION -->
+                    <div class="section-title">
+                        <i class="bi bi-person-badge"></i> {% trans "Informations Personnelles" %}
                         {% if user.is_manager or user.is_superuser %}
-                            <input type="email" class="form-control" name="email" value="{{ user.email }}" placeholder="{% trans 'Entrez votre email' %}">
+                            <span class="edit-indicator ms-2">
+                                <i class="bi bi-pencil"></i> {% trans "Modifiable" %}
+                            </span>
                         {% else %}
-                            <input type="email" class="form-control" value="{{ user.email }}" readonly>
-                            <small class="text-muted">{% trans "Contactez un gestionnaire pour modifier ceci" %}</small>
+                            <span class="readonly-indicator ms-2">
+                                <i class="bi bi-lock"></i> {% trans "Contactez un manager" %}
+                            </span>
                         {% endif %}
                     </div>
 
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="phone" class="form-label">{% trans "Téléphone" %}</label>
-                                <input type="text" class="form-control" name="phone" id="phone"
-                                       value="{{ user.phone }}" placeholder="{% trans 'Entrez votre numéro de téléphone' %}">
+                                <label class="form-label">
+                                    {% trans "Prénom" %}
+                                    {% if user.is_manager or user.is_superuser %}
+                                        <i class="bi bi-pencil text-success ms-1"></i>
+                                    {% else %}
+                                        <i class="bi bi-lock-fill text-muted ms-1"></i>
+                                    {% endif %}
+                                </label>
+                                {% if user.is_manager or user.is_superuser %}
+                                    <input type="text" class="form-control field-editable" name="first_name"
+                                           value="{{ user.first_name }}" placeholder="{% trans 'Entrez votre prénom' %}">
+                                    <small class="edit-indicator">{% trans "Vous pouvez modifier ce champ" %}</small>
+                                {% else %}
+                                    <input type="text" class="form-control field-readonly" value="{{ user.first_name }}" readonly>
+                                    <small class="readonly-indicator">{% trans "Contactez un manager pour modifier" %}</small>
+                                {% endif %}
                             </div>
                         </div>
 
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="location" class="form-label">{% trans "Localisation" %}</label>
-                                <input type="text" class="form-control" name="location" id="location"
-                                       value="{{ user.location }}" placeholder="{% trans 'Entrez votre ville/région' %}">
+                                <label class="form-label">
+                                    {% trans "Nom de Famille" %}
+                                    {% if user.is_manager or user.is_superuser %}
+                                        <i class="bi bi-pencil text-success ms-1"></i>
+                                    {% else %}
+                                        <i class="bi bi-lock-fill text-muted ms-1"></i>
+                                    {% endif %}
+                                </label>
+                                {% if user.is_manager or user.is_superuser %}
+                                    <input type="text" class="form-control field-editable" name="last_name"
+                                           value="{{ user.last_name }}" placeholder="{% trans 'Entrez votre nom de famille' %}">
+                                    <small class="edit-indicator">{% trans "Vous pouvez modifier ce champ" %}</small>
+                                {% else %}
+                                    <input type="text" class="form-control field-readonly" value="{{ user.last_name }}" readonly>
+                                    <small class="readonly-indicator">{% trans "Contactez un manager pour modifier" %}</small>
+                                {% endif %}
                             </div>
                         </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            {% trans "Email" %}
+                            {% if user.is_manager or user.is_superuser %}
+                                <i class="bi bi-pencil text-success ms-1"></i>
+                            {% else %}
+                                <i class="bi bi-lock-fill text-muted ms-1"></i>
+                            {% endif %}
+                        </label>
+                        {% if user.is_manager or user.is_superuser %}
+                            <input type="email" class="form-control field-editable" name="email"
+                                   value="{{ user.email }}" placeholder="{% trans 'Entrez votre email' %}">
+                            <small class="edit-indicator">{% trans "Vous pouvez modifier ce champ" %}</small>
+                        {% else %}
+                            <input type="email" class="form-control field-readonly" value="{{ user.email }}" readonly>
+                            <small class="readonly-indicator">{% trans "Contactez un manager pour modifier" %}</small>
+                        {% endif %}
+                    </div>
+
+                    <div class="section-divider"></div>
+
+                    <!-- CONTACT INFO SECTION -->
+                    <div class="section-title">
+                        <i class="bi bi-telephone"></i> {% trans "Informations de Contact" %}
+                        <span class="edit-indicator ms-2">
+                            <i class="bi bi-pencil"></i> {% trans "Modifiable par tous" %}
+                        </span>
                     </div>
 
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label">{% trans "Membre Depuis" %}</label>
-                                <input type="text" class="form-control" value="{{ user.created_at|date:'d F Y' }}" readonly>
+                                <label for="phone" class="form-label">
+                                    {% trans "Téléphone" %}
+                                    <i class="bi bi-pencil text-success ms-1"></i>
+                                </label>
+                                <input type="text" class="form-control field-editable" name="phone" id="phone"
+                                       value="{{ user.phone }}" placeholder="{% trans 'Entrez votre numéro de téléphone' %}">
+                                <small class="edit-indicator">{% trans "Vous pouvez modifier ce champ" %}</small>
                             </div>
                         </div>
 
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label">{% trans "Statut du Compte" %}</label>
-                                <input type="text" class="form-control" value="{% if user.is_active_user %}{% trans 'Actif' %}{% else %}{% trans 'Inactif' %}{% endif %}" readonly>
+                                <label for="location" class="form-label">
+                                    {% trans "Localisation" %}
+                                    <i class="bi bi-pencil text-success ms-1"></i>
+                                </label>
+                                <input type="text" class="form-control field-editable" name="location" id="location"
+                                       value="{{ user.location }}" placeholder="{% trans 'Entrez votre ville/région' %}">
+                                <small class="edit-indicator">{% trans "Vous pouvez modifier ce champ" %}</small>
                             </div>
                         </div>
                     </div>
 
-                    <div class="d-flex justify-content-end gap-2">
-                        <a href="{% url 'dashboard' %}" class="btn btn-secondary">{% trans "Retour au Tableau de Bord" %}</a>
-                        <button type="submit" class="btn btn-primary">
+                    <div class="section-divider"></div>
+
+                    <!-- ACCOUNT INFO SECTION -->
+                    <div class="section-title">
+                        <i class="bi bi-info-circle"></i> {% trans "Informations du Compte" %}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    {% trans "Membre Depuis" %}
+                                    <i class="bi bi-lock-fill text-muted ms-1"></i>
+                                </label>
+                                <input type="text" class="form-control field-readonly" value="{{ user.created_at|date:'d F Y' }}" readonly>
+                                <small class="readonly-indicator">{% trans "Information système" %}</small>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    {% trans "Statut du Compte" %}
+                                    <i class="bi bi-lock-fill text-muted ms-1"></i>
+                                </label>
+                                <div class="d-flex align-items-center">
+                                    <input type="text" class="form-control field-readonly flex-grow-1"
+                                           value="{% if user.is_active_user %}{% trans 'Actif' %}{% else %}{% trans 'Inactif' %}{% endif %}" readonly>
+                                    {% if user.is_active_user %}
+                                        <span class="badge bg-success ms-2">
+                                            <i class="bi bi-check-circle"></i>
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-danger ms-2">
+                                            <i class="bi bi-x-circle"></i>
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                <small class="readonly-indicator">{% trans "Géré par les administrateurs" %}</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> {% trans "Retour au Tableau de Bord" %}
+                        </a>
+                        <button type="submit" class="btn btn-success">
                             <i class="bi bi-check-lg"></i> {% trans "Mettre à Jour le Profil" %}
                         </button>
                     </div>
