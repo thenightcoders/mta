@@ -47,7 +47,7 @@ def get_manager_dashboard_data(user: User) -> Dict[str, Any]:
     if user.is_superuser:
         total_agents = User.objects.filter(user_type='agent', is_active_user=True).count()
         total_managers = User.objects.filter(user_type='manager', is_active_user=True).count()
-        recent_activities = UserActivity.objects.select_related('user').order_by('-timestamp')[:15]
+        recent_activities = UserActivity.objects.select_related('user').order_by('-timestamp')[:10]
     else:
         total_agents = User.objects.filter(
                 user_type='agent', is_active_user=True, is_superuser=False
@@ -57,7 +57,7 @@ def get_manager_dashboard_data(user: User) -> Dict[str, Any]:
         ).count()
         recent_activities = UserActivity.objects.filter(
                 user__is_superuser=False
-        ).select_related('user').order_by('-timestamp')[:15]
+        ).select_related('user').order_by('-timestamp')[:10]
 
     context: Dict[str, Any] = {
         'total_agents': total_agents,
