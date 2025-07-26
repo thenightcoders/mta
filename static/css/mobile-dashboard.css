@@ -1,0 +1,109 @@
+/* Mobile Dashboard Overrides */
+/* Only override what's broken on mobile, leave desktop alone */
+
+@media (max-width: 767.98px) {
+    /* Stats cards - make them smaller and more efficient */
+    .mobile-stats .card {
+        min-height: 70px;
+    }
+
+    .mobile-stats .card-body {
+        padding: 0.5rem;
+        text-align: center;
+    }
+
+    .mobile-stats .card-title {
+        font-size: 0.7rem;
+        margin-bottom: 0.2rem;
+        font-weight: 600;
+    }
+
+    .mobile-stats h2 {
+        font-size: 1.4rem;
+        margin: 0;
+        font-weight: 700;
+    }
+
+    /* Remove the big icons on mobile stats */
+    .mobile-stats .display-6 {
+        display: none;
+    }
+
+    /* Quick actions - make them more compact */
+    .mobile-actions .btn {
+        padding: 0.4rem 0.2rem;
+        font-size: 0.65rem;
+        min-height: 45px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        line-height: 1.1;
+    }
+
+    .mobile-actions .btn i {
+        font-size: 1rem;
+        margin-bottom: 0.15rem;
+        display: block;
+    }
+
+    /* Compact table on mobile */
+    .mobile-table {
+        font-size: 0.8rem;
+    }
+
+    .mobile-table th,
+    .mobile-table td {
+        padding: 0.4rem 0.5rem;
+    }
+
+    /* Activity section - more compact */
+    .mobile-activity .activity-details {
+        font-size: 0.75rem;
+    }
+
+    .mobile-activity .badge {
+        font-size: 0.7rem;
+    }
+
+    /* Card headers smaller on mobile */
+    .card-header h5 {
+        font-size: 0.9rem;
+    }
+
+    /* Tighter spacing */
+    .container {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+
+    .mb-4 {
+        margin-bottom: 1rem !important;
+    }
+
+    .card {
+        margin-bottom: 0.75rem;
+    }
+}
+
+/* Very small screens (< 576px) */
+@media (max-width: 575.98px) {
+    .mobile-actions .btn {
+        font-size: 0.6rem;
+        padding: 0.3rem 0.1rem;
+        min-height: 40px;
+    }
+
+    .mobile-actions .btn i {
+        font-size: 0.9rem;
+    }
+
+    .mobile-stats h2 {
+        font-size: 1.2rem;
+    }
+
+    .mobile-stats .card-title {
+        font-size: 0.65rem;
+    }
+}

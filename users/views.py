@@ -37,7 +37,7 @@ def login_view(request):
 
                 # Log successful login
                 log_user_activity(user, 'connexion_utilisateur', {
-                    'methode': 'mot_de_passe',
+                    'methode': 'mdp',
                     'agent_utilise': request.META.get('HTTP_USER_AGENT', '')[:200]
                 }, request)
 
