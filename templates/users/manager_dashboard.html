@@ -1,7 +1,12 @@
 {% extends 'base.html' %}
 {% load i18n %}
+{% load static %}
 
 {% block title %}{% trans "Tableau de Bord Manager" %} - {{ site_name }}{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/mobile-dashboard.css' %}">
+{% endblock %}
 
 {% block content %}
 <div class="row">
