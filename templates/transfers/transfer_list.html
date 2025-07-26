@@ -74,7 +74,7 @@
                         <table class="table table-hover">
                             <thead>
                                 <tr>
-                                    <th>ID</th>
+                                    <th>{% trans "Référence" %}</th>
                                     <th>{% trans "Bénéficiaire" %}</th>
                                     <th>{% trans "Téléphone" %}</th>
                                     <th>{% trans "Montant" %}</th>
@@ -92,7 +92,7 @@
                                 <tr>
                                     <td>
                                         <a href="{% url 'transfer_detail' transfer.id %}" class="text-decoration-none">
-                                            #{{ transfer.id }}
+                                            #{{ transfer.reference_id }}
                                         </a>
                                     </td>
                                     <td>{{ transfer.beneficiary_name }}</td>

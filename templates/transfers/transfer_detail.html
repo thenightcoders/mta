@@ -1,14 +1,14 @@
 {% extends 'base.html' %}
 {% load i18n %}
 
-{% block title %}{% trans "Transfert #{{ transfer.id }}" %} - {{ site_name }}{% endblock %}
+{% block title %}{% trans "Transfert" %} {{ transfer.reference_id }} - {{ site_name }}{% endblock %}
 
 {% block content %}
 <div class="row">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>
-                <i class="bi bi-arrow-left-right"></i> {% trans "Transfert" %} #{{ transfer.id }}
+                <i class="bi bi-arrow-left-right"></i> {% trans "Transfert" %} #{{ transfer.reference_id }}
                 <span class="badge bg-{% if transfer.status == 'PENDING' %}warning{% elif transfer.status == 'VALIDATED' %}info{% elif transfer.status == 'COMPLETED' %}success{% else %}danger{% endif %} ms-2">
                     {{ transfer.get_status_display }}
                 </span>
@@ -156,15 +156,6 @@
                     </button>
                 </div>
                 {% endif %}
-
-                <!-- Debug info for development -->
-                {% if user.is_superuser %}
-                <div class="mt-3 p-2 bg-light rounded">
-                    <small class="text-muted">
-                        {% trans "Debug" %}: {% trans "Statut" %}={{ transfer.status }}, can_validate={{ can_validate }}, can_execute={{ can_execute }}
-                    </small>
-                </div>
-                {% endif %}
             </div>
         </div>
         {% endif %}
@@ -175,7 +166,7 @@
                 <h5 class="mb-0">{% trans "Informations sur le Transfert" %}</h5>
             </div>
             <div class="card-body">
-                <p><strong>{% trans "ID" %}:</strong> #{{ transfer.id }}</p>
+                <p><strong>{% trans "Référence" %}:</strong> {{ transfer.reference_id }}</p>
                 <p><strong>{% trans "Créé" %}:</strong> {{ transfer.created_at|date:"d F Y H:i" }}</p>
                 <p><strong>{% trans "Mis à jour" %}:</strong> {{ transfer.updated_at|date:"d F Y H:i" }}</p>
                 <p><strong>{% trans "Statut" %}:</strong>

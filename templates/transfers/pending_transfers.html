@@ -33,7 +33,7 @@
             <div class="card-body text-center">
                 <i class="bi bi-clock display-6"></i>
                 <h5 class="mt-2">{% trans "En Attente" %}</h5>
-                <h3>{{ transfers|length }}</h3>
+                <h5>{{ transfers|length }}</h5>
             </div>
         </div>
     </div>
@@ -42,8 +42,7 @@
             <div class="card-body text-center">
                 <i class="bi bi-cash-stack display-6"></i>
                 <h5 class="mt-2">{% trans "Montant Total" %}</h5>
-                <h3>{% with total_amount=transfers|length %}{{ total_amount }}{% endwith %}</h3>
-                <small>{% trans "transferts" %}</small>
+                <h5>{{ total_amount }}€</h5>
             </div>
         </div>
     </div>
@@ -52,8 +51,7 @@
             <div class="card-body text-center">
                 <i class="bi bi-people display-6"></i>
                 <h5 class="mt-2">{% trans "Agents" %}</h5>
-                <h3>{% regroup transfers by agent as agent_groups %}{{ agent_groups|length }}</h3>
-                <small>{% trans "différents" %}</small>
+                <h5>{% regroup transfers by agent as agent_groups %}{{ agent_groups|length }}</h5>
             </div>
         </div>
     </div>
@@ -62,7 +60,7 @@
             <div class="card-body text-center">
                 <i class="bi bi-lightning display-6"></i>
                 <h5 class="mt-2">{% trans "Action Requise" %}</h5>
-                <h3>{% trans "Validation" %}</h3>
+                <h5>{% trans "Validation" %}</h5>
             </div>
         </div>
     </div>

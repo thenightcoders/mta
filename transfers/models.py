@@ -1,7 +1,9 @@
-from django.db import models
-from django.core.exceptions import ValidationError
-from django.db.models import Q
+import random
+
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
+from django.db import models
+from django.db.models import Q
 
 User = get_user_model()
 
@@ -25,10 +27,35 @@ TRANSFER_STATUS = [
 ]
 
 
+def _generate_reference_id():
+    """Generate unique reference ID in format NNNN-AAAA (numbers-letters)"""
+    numbers = '23456789'  # Exclude 0,1 for clarity
+    letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ'  # Exclude I,O for clarity
+
+    max_attempts = 100  # Safety net to avoid infinite loops
+    attempts = 0
+
+    while attempts < max_attempts:
+        # 4 numbers + dash + 4 letters = 2M9L-XK7P format
+        num_part = ''.join(random.choices(numbers, k=4))
+        letter_part = ''.join(random.choices(letters, k=4))
+        ref_id = f"{num_part}-{letter_part}"
+
+        # Check uniqueness
+        if not Transfer.objects.filter(reference_id=ref_id).exists():
+            return ref_id
+
+        attempts += 1
+
+    # If we somehow can't generate a unique ID, raise an exception
+    raise ValidationError("Unable to generate unique reference ID after 100 attempts")
+
+
 class Transfer(models.Model):
     """
     Core transfer model representing money transfers from France/Belgium to Burundi
     """
+    reference_id = models.CharField(max_length=9, unique=True, editable=False, verbose_name="Référence")
     beneficiary_name = models.CharField(max_length=100, verbose_name="Nom du bénéficiaire")
     beneficiary_phone = models.CharField(max_length=20, verbose_name="Téléphone du bénéficiaire")
     method = models.CharField(max_length=50, choices=WITHDRAWAL_METHOD, verbose_name="Méthode de retrait")
@@ -69,12 +96,18 @@ class Transfer(models.Model):
     class Meta:
         ordering = ['-created_at']
         indexes = [
+            models.Index(fields=['reference_id']),  # Add index for reference_id lookups
             models.Index(fields=['status', '-created_at']),
             models.Index(fields=['agent', '-created_at']),
             models.Index(fields=['validated_by', '-created_at']),
         ]
         verbose_name = "Transfer"
         verbose_name_plural = "Transfers"
+
+    def save(self, *args, **kwargs):
+        if not self.reference_id:
+            self.reference_id = _generate_reference_id()
+        super().save(*args, **kwargs)
 
     def clean(self):
         """Validation rules for transfers"""
@@ -83,18 +116,19 @@ class Transfer(models.Model):
 
         # Business rule validations
         if self.beneficiary_phone and not self.beneficiary_phone.startswith('+'):
-                raise ValidationError("Le numéro de téléphone doit commencer par +(indicatif telephonique international: 257, 32, 33, etc.")
+            raise ValidationError(
+                    "Le numéro de téléphone doit commencer par +(indicatif telephonique international: 257, 32, 33, etc.")
 
     def can_be_validated_by(self, user):
-        """Check if user can validate this transfer"""
+        """Check if the user can validate this transfer"""
         return (user.is_manager() or user.is_superuser) and self.status == 'PENDING'
 
     def can_be_executed_by(self, user):
-        """Check if user can execute this transfer"""
+        """Check if the user can execute this transfer"""
         return (user.is_manager() or user.is_superuser) and self.status == 'VALIDATED'
 
     def get_commission_rate(self):
-        """Get applicable commission rate for this transfer"""
+        """Get an applicable commission rate for this transfer"""
         if self.status == 'PENDING':
             return None
 
@@ -104,14 +138,14 @@ class Transfer(models.Model):
         return None
 
     def get_commission_amount(self):
-        """Get total commission amount for this transfer"""
+        """Get the total commission amount for this transfer"""
         commission = getattr(self, 'commission', None)
         if commission:
             return commission.total_commission
         return None
 
     def __str__(self):
-        return f"#{self.id} - {self.beneficiary_name} - {self.amount} {self.sent_currency} ({self.get_status_display()})"
+        return f"{self.reference_id} - {self.beneficiary_name} - {self.amount} {self.sent_currency} ({self.get_status_display()})"
 
 
 class CommissionConfig(models.Model):
@@ -236,7 +270,8 @@ class CommissionDistribution(models.Model):
             return None
 
         total_commission = commission_config.commission_rate
-        agent_amount = (total_commission * commission_config.agent_share) / 100 if not (transfer.agent.is_manager()) else 0
+        agent_amount = (total_commission * commission_config.agent_share) / 100 if not (
+            transfer.agent.is_manager()) else 0
         manager_amount = total_commission - agent_amount
 
         return {
@@ -251,4 +286,4 @@ class CommissionDistribution(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"Commission Transfer #{self.transfer.id} - Agent: {self.declaring_agent_amount}, Manager: {self.manager_amount}"
+        return f"Commission Transfer {self.transfer.reference_id} - Agent: {self.declaring_agent_amount}, Manager: {self.manager_amount}"
