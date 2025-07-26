@@ -1,16 +1,19 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-from django.http import HttpResponseForbidden, JsonResponse
-from django.views.decorators.http import require_http_methods
-from django.core.exceptions import ValidationError
-from django.utils import timezone
-from .models import Transfer, CommissionConfig, CommissionDistribution, TRANSFER_STATUS
-from .forms import TransferForm, TransferValidationForm, CommissionConfigForm
-from users.models import log_user_activity, User
-from django.db.models.functions import TruncDay, TruncWeek, TruncMonth, TruncYear
-from django.db.models import Sum, F
 import datetime
+
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
+from django.db.models import Sum
+from django.db.models.functions import TruncDay, TruncMonth, TruncWeek, TruncYear
+from django.http import HttpResponseForbidden, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+from django.views.decorators.http import require_http_methods
+
+from users.models import User, log_user_activity
+from .forms import CommissionConfigForm, TransferForm
+from .models import CommissionConfig, CommissionDistribution, TRANSFER_STATUS, Transfer
+
 
 @login_required
 def transfer_list(request):
@@ -60,10 +63,10 @@ def create_transfer(request):
             except ValidationError as e:
                 messages.error(request, str(e))
                 log_user_activity(
-                    request.user,
-                    'Transfer_creation_failed',
-                    {'error': str(e), 'form_data': form.cleaned_data},
-                    request
+                        request.user,
+                        'Transfer_creation_failed',
+                        {'error': str(e), 'form_data': form.cleaned_data},
+                        request
                 )
         else:
             print("Form errors:", form.errors)
@@ -203,9 +206,13 @@ def pending_transfers(request):
     if not (request.user.is_manager() or request.user.is_superuser):
         return HttpResponseForbidden("Access denied")
 
-    pending_transfers = Transfer.objects.filter(status='PENDING').select_related('agent').order_by('-created_at')
-
-    return render(request, 'transfers/pending_transfers.html', {'transfers': pending_transfers})
+    transfers_pending = Transfer.objects.filter(status='PENDING').select_related('agent').order_by('-created_at')
+    total_amount = transfers_pending.aggregate(total=Sum('amount'))['total'] or 0
+    return render(request, 'transfers/pending_transfers.html',
+                  {
+                      'transfers': transfers_pending,
+                      'total_amount': total_amount,
+                  })
 
 
 @login_required
@@ -344,6 +351,7 @@ def create_commission_for_transfer(transfer):
                     **commission_data
             )
 
+
 @login_required
 def commissions_overview(request):
     """ list current user commission for a specified period, managers can view all user's commissions"""
@@ -367,7 +375,6 @@ def commissions_overview(request):
     }
     period_label = period_label_map.get(period, 'mois')
 
-    
     # agents only see their earnings
     if not (user.is_manager() or user.is_superuser):
         commissions = (
@@ -378,7 +385,7 @@ def commissions_overview(request):
             .annotate(total=Sum('declaring_agent_amount'))
             .order_by('period')
         )
-        
+
         detailed = (
             CommissionDistribution.objects
             .filter(agent=user)
@@ -391,17 +398,17 @@ def commissions_overview(request):
             'period': period,
             'commissions': commissions,
             'detailed_commissions': detailed,
-            'period_label': period_label,  
+            'period_label': period_label,
         }
     else:
-    # Managers can visualize the commisions and all agent's earnings 
+        # Managers can visualize the commisions and all agent's earnings
         global_commissions = (
             CommissionDistribution.objects
             .annotate(period=trunc_function('created_at'))
             .values('period')
             .annotate(
-                total_agent=Sum('declaring_agent_amount'),
-                total_manager=Sum('manager_amount')
+                    total_agent=Sum('declaring_agent_amount'),
+                    total_manager=Sum('manager_amount')
             )
             .order_by('-period')
         )
@@ -410,13 +417,13 @@ def commissions_overview(request):
             CommissionDistribution.objects
             .values('agent__id', 'agent__username')
             .annotate(
-                total=Sum('declaring_agent_amount'),
-                total_commissions=Sum('total_commission'),
-                total_manager=Sum('manager_amount')
+                    total=Sum('declaring_agent_amount'),
+                    total_commissions=Sum('total_commission'),
+                    total_manager=Sum('manager_amount')
             )
             .order_by('total')
         )
-        
+
         detailed = (
             CommissionDistribution.objects
             .select_related('transfer__validated_by', 'config_used', 'agent')
@@ -429,19 +436,18 @@ def commissions_overview(request):
             'global_commissions': global_commissions,
             'per_agent_totals': per_agent_totals,
             'detailed_commissions': detailed,
-            'period_label': period_label,  
+            'period_label': period_label,
         }
 
-        
     return render(request, 'transfers/commissions.html', context)
+
 
 @login_required
 def clear_commissions(request):
-
     """Update commission config - managers and superusers only"""
     if not (request.user.is_manager() or request.user.is_superuser):
         return JsonResponse({'error': 'Access denied'}, status=403)
-    
+
     agents = User.objects.filter()
 
     if request.method == 'POST':
