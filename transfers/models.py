@@ -127,16 +127,6 @@ class Transfer(models.Model):
         """Check if the user can execute this transfer"""
         return (user.is_manager() or user.is_superuser) and self.status == 'VALIDATED'
 
-    def get_commission_rate(self):
-        """Get an applicable commission rate for this transfer"""
-        if self.status == 'PENDING':
-            return None
-
-        commission = getattr(self, 'commission', None)
-        if commission and commission.config_used:
-            return commission.config_used.commission_rate
-        return None
-
     def get_commission_amount(self):
         """Get the total commission amount for this transfer"""
         commission = getattr(self, 'commission', None)
@@ -155,8 +145,8 @@ class CommissionConfig(models.Model):
     manager = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Manager")
     min_amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Montant minimum")
     max_amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Montant maximum")
-    commission_rate = models.DecimalField(max_digits=5, decimal_places=2,
-                                          verbose_name="Taux de commission")  # commission for each transfer amount range
+    commission_amount = models.DecimalField(max_digits=12, decimal_places=4,
+                                          verbose_name="Montant de commission")  # Fixed amount in currency
     agent_share = models.DecimalField(max_digits=5, decimal_places=2,
                                       verbose_name="Part agent (%)")  # % of the commission
     currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, verbose_name="Devise")
@@ -171,8 +161,8 @@ class CommissionConfig(models.Model):
                     name='valid_agent_share'
             ),
             models.CheckConstraint(
-                    check=Q(commission_rate__gte=0),
-                    name='valid_commission_rate'
+                    check=Q(commission_amount__gte=0.01),  # Minimum 0.01 commission
+                    name='valid_commission_amount'
             ),
             models.CheckConstraint(
                     check=Q(min_amount__lte=models.F('max_amount')),
@@ -193,8 +183,8 @@ class CommissionConfig(models.Model):
         if self.agent_share < 0 or self.agent_share > 100:
             raise ValidationError("Part agent doit être entre 0 et 100%.")
 
-        if self.commission_rate < 0:
-            raise ValidationError("Commission totale doit être une somme positive")
+        if self.commission_amount < 0.01:
+            raise ValidationError("Le montant de commission doit être d'au moins 0.01")
 
         if self.min_amount > self.max_amount:
             raise ValidationError("Le montant minimum ne peut pas être supérieur au maximum.")
@@ -216,12 +206,12 @@ class CommissionConfig(models.Model):
         )
 
     def __str__(self):
-        return f"{self.commission_rate} {self.currency} pour [{self.min_amount}-{self.max_amount}] {self.currency} (Agent: {self.agent_share}%)"
+        return f"{self.commission_amount} {self.currency} pour [{self.min_amount}-{self.max_amount}] {self.currency} (Agent: {self.agent_share}%)"
 
 
 class CommissionDistribution(models.Model):
     """
-    Tracks commission distribution for each transfer
+    Track commission distribution for each transfer
     """
     transfer = models.OneToOneField(Transfer, on_delete=models.CASCADE, related_name='commission',
                                     verbose_name="Transfer")
@@ -229,9 +219,9 @@ class CommissionDistribution(models.Model):
     config_used = models.ForeignKey(CommissionConfig, on_delete=models.SET_NULL, null=True,
                                     verbose_name="Configuration utilisée")
 
-    total_commission = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Commission totale")
-    declaring_agent_amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Montant agent")
-    manager_amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Montant manager")
+    total_commission = models.DecimalField(max_digits=12, decimal_places=4, verbose_name="Commission totale")
+    declaring_agent_amount = models.DecimalField(max_digits=12, decimal_places=4, verbose_name="Montant agent")
+    manager_amount = models.DecimalField(max_digits=12, decimal_places=4, verbose_name="Montant manager")
 
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Créé le")
 
@@ -258,7 +248,7 @@ class CommissionDistribution(models.Model):
 
         # Verify that agent + manager amounts equal total (within rounding tolerance)
         calculated_total = self.declaring_agent_amount + self.manager_amount
-        if abs(calculated_total - self.total_commission) > 0.01:
+        if abs(calculated_total - self.total_commission) > 0.0001:  # Tighter tolerance for 4 decimals
             raise ValidationError(
                     f"La somme des parts ({calculated_total}) ne correspond pas au total ({self.total_commission})."
             )
@@ -269,15 +259,15 @@ class CommissionDistribution(models.Model):
         if not commission_config:
             return None
 
-        total_commission = commission_config.commission_rate
-        agent_amount = (total_commission * commission_config.agent_share) / 100 if not (
-            transfer.agent.is_manager()) else 0
+        # Use fixed commission amount (not percentage)
+        total_commission = commission_config.commission_amount
+        agent_amount = (total_commission * commission_config.agent_share) / 100 if not (transfer.agent.is_manager()) else 0
         manager_amount = total_commission - agent_amount
 
         return {
-            'total_commission': round(total_commission, 2),
-            'declaring_agent_amount': round(agent_amount, 2),
-            'manager_amount': round(manager_amount, 2),
+            'total_commission': round(total_commission, 4),
+            'declaring_agent_amount': round(agent_amount, 4),
+            'manager_amount': round(manager_amount, 4),
         }
 
     def save(self, *args, **kwargs):

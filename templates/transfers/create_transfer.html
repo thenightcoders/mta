@@ -241,13 +241,6 @@
 
 {% block extra_js %}
 <script>
-// Mock commission configs - replace with actual data from backend
-const commissionConfigs = [
-    { currency: 'EUR', minAmount: 0, maxAmount: 500, commissionRate: 3, agentShare: 40 },
-    { currency: 'EUR', minAmount: 500, maxAmount: 2000, commissionRate: 2.5, agentShare: 45 },
-    { currency: 'BIF', minAmount: 0, maxAmount: 1000000, commissionRate: 5, agentShare: 35 }
-];
-
 function calculateCommission() {
     const amount = parseFloat(document.getElementById('{{ form.amount.id_for_label }}').value) || 0;
     const currency = document.getElementById('{{ form.sent_currency.id_for_label }}').value;
@@ -258,32 +251,38 @@ function calculateCommission() {
         return;
     }
 
-    // Find applicable config
-    const config = commissionConfigs.find(c =>
-        c.currency === currency &&
-        amount >= c.minAmount &&
-        amount <= c.maxAmount
-    );
-
-    if (config) {
-        const totalCommission = (amount * config.commissionRate) / 100;
-        const agentAmount = (totalCommission * config.agentShare) / 100;
-
-        previewDiv.innerHTML = `
-            <div class="row">
-                <div class="col-6">
-                    <small class="text-muted">{% trans "Vous gagnerez" %}:</small>
-                    <div class="fw-bold text-success">${agentAmount.toFixed(2)} ${currency}</div>
-                </div>
-                <div class="col-6">
-                    <small class="text-muted">{% trans "Taux appliqué" %}:</small>
-                    <div class="fw-bold">${config.commissionRate}%</div>
-                </div>
-            </div>
-        `;
-    } else {
-        previewDiv.innerHTML = '<div class="text-warning">{% trans "Aucune configuration de commission trouvée" %}</div>';
-    }
+    // Make AJAX request to get commission preview
+    fetch(`{% url 'commission_preview' %}?amount=${amount}&currency=${currency}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.config_found) {
+                previewDiv.innerHTML = `
+                    <div class="row">
+                        <div class="col-4">
+                            <small class="text-muted">{% trans "Vous gagnerez" %}:</small>
+                            <div class="fw-bold text-success">${data.agent_amount.toFixed(4)} ${currency}</div>
+                        </div>
+                        <div class="col-4">
+                            <small class="text-muted">{% trans "Commission fixe" %}:</small>
+                            <div class="fw-bold">${data.total_commission.toFixed(4)} ${currency}</div>
+                        </div>
+                        <div class="col-4">
+                            <small class="text-muted">{% trans "Votre part" %}:</small>
+                            <div class="fw-bold">${data.agent_share_percent.toFixed(1)}%</div>
+                        </div>
+                    </div>
+                    <small class="text-muted">Plage: ${data.range} ${currency}</small>
+                `;
+            } else if (data.success && !data.config_found) {
+                previewDiv.innerHTML = `<div class="text-warning"><i class="bi bi-exclamation-triangle"></i> ${data.message}</div>`;
+            } else {
+                previewDiv.innerHTML = '<div class="text-danger">Erreur lors du calcul de commission</div>';
+            }
+        })
+        .catch(error => {
+            console.error('Commission calculation error:', error);
+            previewDiv.innerHTML = '<div class="text-danger">Erreur de connexion</div>';
+        });
 }
 
 function updateExchangePreview() {
@@ -322,6 +321,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     [amountInput, sentCurrencyInput].forEach(input => {
         if (input) input.addEventListener('input', calculateCommission);
+        if (input) input.addEventListener('change', calculateCommission);
     });
 
     [amountInput, sentCurrencyInput, receivedCurrencyInput].forEach(input => {

@@ -215,7 +215,7 @@
                         </div>
                         <div class="text-end">
                             <div class="text-success fw-bold">+{{ commission.declaring_agent_amount|floatformat:2 }} EUR</div>
-                            <small class="text-muted">{% trans "taux" %} {{ commission.config_used.commission_rate }}%</small>
+                            <small class="text-muted">{% trans "taux" %} {{ commission.config_used.commission_amount }}%</small>
                         </div>
                     </div>
                     {% endfor %}

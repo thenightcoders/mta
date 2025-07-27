@@ -10,7 +10,7 @@
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>
-                <i class="bi bi-percent"></i> {% trans "Configurations Commission" %}
+                <i class="bi bi-cash-stack"></i> {% trans "Configurations Commission" %}
             </h1>
             <a href="{% url 'create_commission_config' %}" class="btn btn-primary">
                 <i class="bi bi-plus-circle"></i> {% trans "Nouvelle Configuration" %}
@@ -30,7 +30,7 @@
                                 <tr>
                                     <th>{% trans "Devise" %}</th>
                                     <th>{% trans "Plage de Montant" %}</th>
-                                    <th>{% trans "Taux Commission" %}</th>
+                                    <th>{% trans "Commission Fixe" %}</th>
                                     <th>{% trans "Part Agent" %}</th>
                                     <th>{% trans "Part Manager" %}</th>
                                     <th>{% trans "Statut" %}</th>
@@ -47,7 +47,7 @@
                                         {{ config.min_amount|floatformat:2 }} - {{ config.max_amount|floatformat:2 }} {{ config.currency }}
                                     </td>
                                     <td>
-                                        <strong>{{ config.commission_rate|floatformat:2 }}%</strong>
+                                        <strong>{{ config.commission_amount|floatformat:4 }} {{ config.currency }}</strong>
                                     </td>
                                     <td>
                                         <span class="text-success">{{ config.agent_share|floatformat:2 }}%</span>
@@ -61,7 +61,7 @@
                                         </span>
                                     </td>
                                     <td>
-                                        <button class="btn btn-sm btn-outline-primary me-1" onclick="editConfig({{ config.id }}, '{{ config.currency }}', '{{ config.min_amount }}', '{{ config.max_amount }}', '{{ config.commission_rate }}', '{{ config.agent_share }}', {{ config.active|yesno:'true,false' }})">
+                                        <button class="btn btn-sm btn-outline-primary me-1" onclick="editConfig({{ config.id }}, '{{ config.currency }}', '{{ config.min_amount }}', '{{ config.max_amount }}', '{{ config.commission_amount }}', '{{ config.agent_share }}', {{ config.active|yesno:'true,false' }})">
                                             <i class="bi bi-pencil"></i>
                                         </button>
                                         <button class="btn btn-sm btn-{% if config.active %}danger{% else %}success{% endif %}" onclick="toggleConfig({{ config.id }}, {{ config.active|yesno:'true,false' }})">
@@ -75,7 +75,7 @@
                     </div>
                 {% else %}
                     <div class="text-center py-5">
-                        <i class="bi bi-percent display-1 text-muted"></i>
+                        <i class="bi bi-cash-stack display-1 text-muted"></i>
                         <h4 class="mt-3">{% trans "Aucune configuration de commission" %}</h4>
                         <p class="text-muted">{% trans "Créez votre première configuration de commission." %}</p>
                         <a href="{% url 'create_commission_config' %}" class="btn btn-primary">
@@ -130,9 +130,9 @@
     <div class="col-12">
         <div class="alert alert-info">
             <h6 class="mb-2"><i class="bi bi-info-circle"></i> {% trans "Comment Fonctionne la Commission" %}</h6>
-            <p class="mb-1"><strong>{% trans "Taux de Commission" %} :</strong> {% trans "Pourcentage prélevé sur le montant du transfert (ex: 3% de 100 EUR = 3 EUR de commission totale)" %}</p>
-            <p class="mb-1"><strong>{% trans "Part Agent" %} :</strong> {% trans "Pourcentage de commission allant à l'agent (ex: 40% de 3 EUR = 1,20 EUR à l'agent)" %}</p>
-            <p class="mb-0"><strong>{% trans "Part Manager" %} :</strong> {% trans "Le reste de la commission va au manager (ex: 60% de 3 EUR = 1,80 EUR au manager)" %}</p>
+            <p class="mb-1"><strong>{% trans "Commission Fixe" %} :</strong> {% trans "Montant fixe prélevé sur chaque transfert dans cette plage (ex: 5.50 EUR pour tous les transferts de 100-200 EUR)" %}</p>
+            <p class="mb-1"><strong>{% trans "Part Agent" %} :</strong> {% trans "Pourcentage de la commission fixe allant à l'agent (ex: 40% de 5.50 EUR = 2.20 EUR à l'agent)" %}</p>
+            <p class="mb-0"><strong>{% trans "Part Manager" %} :</strong> {% trans "Le reste de la commission va au manager (ex: 60% de 5.50 EUR = 3.30 EUR au manager)" %}</p>
         </div>
     </div>
 </div>
@@ -184,8 +184,9 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label">{% trans "Taux Commission" %} (%)</label>
-                                <input type="number" class="form-control" id="editCommissionRate" step="0.01">
+                                <label class="form-label">{% trans "Commission Fixe" %}</label>
+                                <input type="number" class="form-control" id="editCommissionAmount" step="0.0001">
+                                <div class="form-text">{% trans "Montant fixe en devise de base" %}</div>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -242,13 +243,13 @@ function toggleConfig(configId, isActive) {
     }
 }
 
-function editConfig(configId, currency, minAmount, maxAmount, commissionRate, agentShare, active) {
+function editConfig(configId, currency, minAmount, maxAmount, commissionAmount, agentShare, active) {
     console.log('editConfig called with:');
     console.log('configId:', configId);
     console.log('currency:', currency);
     console.log('minAmount:', minAmount);
     console.log('maxAmount:', maxAmount);
-    console.log('commissionRate:', commissionRate);
+    console.log('commissionAmount:', commissionAmount);
     console.log('agentShare:', agentShare);
     console.log('active:', active);
 
@@ -257,7 +258,7 @@ function editConfig(configId, currency, minAmount, maxAmount, commissionRate, ag
     document.getElementById('editCurrency').value = currency;
     document.getElementById('editMinAmount').value = parseFloat(minAmount);
     document.getElementById('editMaxAmount').value = parseFloat(maxAmount);
-    document.getElementById('editCommissionRate').value = parseFloat(commissionRate);
+    document.getElementById('editCommissionAmount').value = parseFloat(commissionAmount);
     document.getElementById('editAgentShare').value = parseFloat(agentShare);
     document.getElementById('editActive').checked = active;
 
@@ -273,7 +274,7 @@ function saveConfig() {
     const formData = {
         min_amount: document.getElementById('editMinAmount').value,
         max_amount: document.getElementById('editMaxAmount').value,
-        commission_rate: document.getElementById('editCommissionRate').value,
+        commission_amount: document.getElementById('editCommissionAmount').value,
         agent_share: document.getElementById('editAgentShare').value,
         active: document.getElementById('editActive').checked
     };
@@ -309,14 +310,14 @@ function saveConfig() {
 }
 
 {% if configs %}
-// Commission calculator - simple and bulletproof
+// Commission calculator with FIXED amounts
 const commissionConfigs = [
     {% for config in configs %}
     {
         currency: '{{ config.currency }}',
         minAmount: parseFloat('{{ config.min_amount }}'.replace(',', '.')),
         maxAmount: parseFloat('{{ config.max_amount }}'.replace(',', '.')),
-        commissionRate: parseFloat('{{ config.commission_rate }}'.replace(',', '.')),
+        commissionAmount: parseFloat('{{ config.commission_amount }}'.replace(',', '.')),  // Fixed amount, not rate
         agentShare: parseFloat('{{ config.agent_share }}'.replace(',', '.')),
         active: {{ config.active|yesno:'true,false' }}
     },
@@ -348,7 +349,8 @@ function calculateCommission() {
     console.log('Found config:', config);
 
     if (config) {
-        const totalCommission = (amount * config.commissionRate) / 100;
+        // Use FIXED commission amount (not percentage calculation)
+        const totalCommission = config.commissionAmount;
         const agentAmount = (totalCommission * config.agentShare) / 100;
         const managerAmount = totalCommission - agentAmount;
 
@@ -357,20 +359,20 @@ function calculateCommission() {
         resultDiv.innerHTML =
             '<div class="row">' +
                 '<div class="col-6 col-md-3">' +
-                    '<small class="text-muted">{% trans "Commission Totale" %}:</small>' +
-                    '<div class="fw-bold">' + totalCommission.toFixed(2) + ' ' + currency + '</div>' +
+                    '<small class="text-muted">{% trans "Commission Fixe" %}:</small>' +
+                    '<div class="fw-bold">' + totalCommission.toFixed(4) + ' ' + currency + '</div>' +
                 '</div>' +
                 '<div class="col-6 col-md-3">' +
                     '<small class="text-muted">{% trans "Agent Reçoit" %}:</small>' +
-                    '<div class="fw-bold text-success">' + agentAmount.toFixed(2) + ' ' + currency + '</div>' +
+                    '<div class="fw-bold text-success">' + agentAmount.toFixed(4) + ' ' + currency + '</div>' +
                 '</div>' +
                 '<div class="col-6 col-md-3">' +
                     '<small class="text-muted">{% trans "Manager Reçoit" %}:</small>' +
-                    '<div class="fw-bold text-info">' + managerAmount.toFixed(2) + ' ' + currency + '</div>' +
+                    '<div class="fw-bold text-info">' + managerAmount.toFixed(4) + ' ' + currency + '</div>' +
                 '</div>' +
                 '<div class="col-6 col-md-3">' +
-                    '<small class="text-muted">{% trans "Taux Utilisé" %}:</small>' +
-                    '<div class="fw-bold">' + config.commissionRate + '%</div>' +
+                    '<small class="text-muted">{% trans "Plage Utilisée" %}:</small>' +
+                    '<div class="fw-bold">' + config.minAmount + '-' + config.maxAmount + '</div>' +
                 '</div>' +
             '</div>';
     } else {

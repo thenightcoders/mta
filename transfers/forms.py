@@ -52,7 +52,7 @@ class CommissionConfigForm(forms.ModelForm):
 
     class Meta:
         model = CommissionConfig
-        fields = ['currency', 'min_amount', 'max_amount', 'commission_rate', 'agent_share', 'active']
+        fields = ['currency', 'min_amount', 'max_amount', 'commission_amount', 'agent_share', 'active']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -67,13 +67,13 @@ class CommissionConfigForm(forms.ModelForm):
         # Add placeholders and help text
         self.fields['min_amount'].widget.attrs['placeholder'] = '0.00'
         self.fields['max_amount'].widget.attrs['placeholder'] = '1000.00'
-        self.fields['commission_rate'].widget.attrs['placeholder'] = '6.00'
+        self.fields['commission_amount'].widget.attrs['placeholder'] = '6.00'
         self.fields['agent_share'].widget.attrs['placeholder'] = '50.00'
 
         # Add step for decimal fields
         self.fields['min_amount'].widget.attrs['step'] = '0.01'
         self.fields['max_amount'].widget.attrs['step'] = '0.01'
-        self.fields['commission_rate'].widget.attrs['step'] = '0.01'
+        self.fields['commission_amount'].widget.attrs['step'] = '0.01'
         self.fields['agent_share'].widget.attrs['step'] = '0.01'
 
 

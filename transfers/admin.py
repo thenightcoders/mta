@@ -58,7 +58,7 @@ class TransferAdmin(admin.ModelAdmin):
 class CommissionConfigAdmin(admin.ModelAdmin):
     list_display = (
         'manager', 'currency', 'min_amount', 'max_amount',
-        'commission_rate', 'agent_share', 'manager_share', 'active', 'created_at'
+        'commission_amount', 'agent_share', 'manager_share', 'active', 'created_at'
     )
 
     list_filter = ('currency', 'active', 'manager', 'created_at')
@@ -70,7 +70,7 @@ class CommissionConfigAdmin(admin.ModelAdmin):
             'fields': ('manager', 'currency', 'min_amount', 'max_amount', 'active')
         }),
         ('Commission Rates', {
-            'fields': ('commission_rate', 'agent_share'),
+            'fields': ('commission_amount', 'agent_share'),
             'description': 'Commission rate is percentage of transfer amount. Agent share is percentage of total commission.'
         }),
         ('Timestamps', {

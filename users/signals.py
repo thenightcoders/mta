@@ -156,10 +156,10 @@ def extract_model_details(instance):
             })
 
         # Commission configuration - affects profit calculations
-        elif hasattr(instance, 'commission_rate'):
+        elif hasattr(instance, 'commission_amount'):
             details.update({
                 'currency': getattr(instance, 'currency', 'unknown'),
-                'commission_rate': str(instance.commission_rate),
+                'commission_amount': str(instance.commission_amount),
                 'agent_share': str(getattr(instance, 'agent_share', 0)),
                 'manager_share': str(getattr(instance, 'manager_share', 0)),
                 'active': getattr(instance, 'active', None)

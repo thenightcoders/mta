@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.db.models import Sum
 from django.db.models.functions import TruncDay, TruncMonth, TruncWeek, TruncYear
+from django.db.utils import IntegrityError
 from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -235,19 +236,62 @@ def create_commission_config(request):
     if request.method == 'POST':
         form = CommissionConfigForm(request.POST)
         if form.is_valid():
-            config = form.save(commit=False)
-            config.manager = request.user
-            config.save()
+            try:
+                # Check for existing config with same parameters
+                existing_config = CommissionConfig.objects.filter(
+                        manager=request.user,
+                        currency=form.cleaned_data['currency'],
+                        min_amount=form.cleaned_data['min_amount'],
+                        max_amount=form.cleaned_data['max_amount'],
+                        active=True
+                ).first()
 
-            log_user_activity(
-                    request.user,
-                    'commission_config_created',
-                    {'currency': config.currency, 'rate': str(config.commission_rate)},
-                    request
-            )
+                if existing_config:
+                    messages.error(
+                            request,
+                            f'Une configuration active existe déjà pour {form.cleaned_data["min_amount"]}-{form.cleaned_data["max_amount"]} {form.cleaned_data["currency"]}. '
+                            f'Désactivez-la d\'abord ou modifiez la plage de montants.'
+                    )
+                    return render(request, 'transfers/create_commission_config.html', {'form': form})
 
-            messages.success(request, 'Commission configuration created successfully')
-            return redirect('commission_config_list')
+                config = form.save(commit=False)
+                config.manager = request.user
+                config.save()
+
+                log_user_activity(
+                        request.user,
+                        'commission_config_created',
+                        {
+                            'currency': config.currency,
+                            'amount_range': f'{config.min_amount}-{config.max_amount}',
+                            'commission_amount': str(config.commission_amount)
+                        },
+                        request
+                )
+
+                messages.success(request, 'Configuration de commission créée avec succès')
+                return redirect('commission_config_list')
+
+            except IntegrityError as e:
+                messages.error(
+                        request,
+                        'Conflit de configuration : cette plage de montants existe déjà pour cette devise. '
+                        'Veuillez utiliser une plage différente.'
+                )
+                log_user_activity(
+                        request.user,
+                        'commission_config_creation_failed',
+                        {'error': 'IntegrityError - duplicate range', 'form_data': form.cleaned_data},
+                        request
+                )
+            except ValidationError as e:
+                messages.error(request, str(e))
+                log_user_activity(
+                        request.user,
+                        'commission_config_creation_failed',
+                        {'error': str(e), 'form_data': form.cleaned_data},
+                        request
+                )
     else:
         form = CommissionConfigForm()
 
@@ -300,7 +344,7 @@ def update_commission_config(request, config_id):
         # Update fields
         config.min_amount = float(data.get('min_amount', config.min_amount))
         config.max_amount = float(data.get('max_amount', config.max_amount))
-        config.commission_rate = float(data.get('commission_rate', config.commission_rate))
+        config.commission_amount = float(data.get('commission_amount', config.commission_amount))
         config.agent_share = float(data.get('agent_share', config.agent_share))
         config.active = data.get('active', config.active)
 
@@ -314,7 +358,7 @@ def update_commission_config(request, config_id):
                 {
                     'config_id': config.id,
                     'currency': config.currency,
-                    'commission_rate': str(config.commission_rate),
+                    'commission_amount': str(config.commission_amount),
                     'agent_share': str(config.agent_share),
                     'active': config.active
                 },
@@ -331,10 +375,10 @@ def update_commission_config(request, config_id):
 
 def create_commission_for_transfer(transfer):
     """Helper function to create commission for a validated transfer"""
-    # Find applicable commission config
+    # Find applicable commission config for the transfer currency and amount
     config = CommissionConfig.objects.filter(
             manager=transfer.validated_by,
-            currency=transfer.sent_currency,
+            currency=transfer.sent_currency,  # Commission config must match transfer currency
             min_amount__lte=transfer.amount,
             max_amount__gte=transfer.amount,
             active=True
@@ -350,6 +394,57 @@ def create_commission_for_transfer(transfer):
                     config_used=config,
                     **commission_data
             )
+            return True
+    return False
+
+
+@login_required
+def get_commission_preview(request):
+    """AJAX endpoint to get commission preview for transfer creation"""
+    if request.method == 'GET':
+        amount = request.GET.get('amount')
+        currency = request.GET.get('currency')
+
+        if not amount or not currency:
+            return JsonResponse({'error': 'Amount and currency required'})
+
+        try:
+            amount = float(amount)
+        except ValueError:
+            return JsonResponse({'error': 'Invalid amount'})
+
+        # Find applicable commission config
+        config = CommissionConfig.objects.filter(
+                currency=currency,
+                min_amount__lte=amount,
+                max_amount__gte=amount,
+                active=True
+        ).first()
+
+        if config:
+            # Calculate commission preview
+            total_commission = config.commission_amount
+            agent_amount = (total_commission * config.agent_share) / 100
+            manager_amount = total_commission - agent_amount
+
+            return JsonResponse({
+                'success': True,
+                'config_found': True,
+                'total_commission': float(total_commission),
+                'agent_amount': float(agent_amount),
+                'manager_amount': float(manager_amount),
+                'agent_share_percent': float(config.agent_share),
+                'currency': currency,
+                'range': f"{config.min_amount} - {config.max_amount}",
+            })
+        else:
+            return JsonResponse({
+                'success': True,
+                'config_found': False,
+                'message': f'Aucune configuration de commission pour {amount} {currency}'
+            })
+
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 
 @login_required
