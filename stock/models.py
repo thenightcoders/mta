@@ -182,6 +182,7 @@ class ExchangeRate(models.Model):
     from_currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES)
     to_currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES)
     rate = models.DecimalField(max_digits=10, decimal_places=4)
+    active = models.BooleanField(default=True, verbose_name="Actif")
     created_at = models.DateTimeField(auto_now_add=True)
     defined_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
 
@@ -189,6 +190,7 @@ class ExchangeRate(models.Model):
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=['from_currency', 'to_currency', '-created_at']),
+            models.Index(fields=['active', '-created_at']),  # New index for active rates
         ]
         verbose_name = "Exchange Rate"
         verbose_name_plural = "Exchange Rates"
@@ -201,5 +203,33 @@ class ExchangeRate(models.Model):
         if self.from_currency == self.to_currency:
             raise ValidationError("Les devises source et destination doivent être différentes.")
 
+    @classmethod
+    def get_latest_rate(cls, from_currency, to_currency):
+        """Get the latest active exchange rate for a currency pair"""
+        return cls.objects.filter(
+                from_currency=from_currency,
+                to_currency=to_currency,
+                active=True
+        ).first()
+
+    @classmethod
+    def get_current_rates_for_agent(cls):
+        """Get current rates that agents should see (the latest active rate per pair)"""
+        from collections import OrderedDict
+
+        rates = cls.objects.filter(active=True).order_by(
+                'from_currency', 'to_currency', '-created_at'
+        )
+
+        # Get latest rate per currency pair
+        latest_rates = OrderedDict()
+        for rate in rates:
+            key = (rate.from_currency, rate.to_currency)
+            if key not in latest_rates:
+                latest_rates[key] = rate
+
+        return latest_rates.values()
+
     def __str__(self):
-        return f"{self.from_currency} → {self.to_currency}: {self.rate} (le {self.created_at.strftime('%d/%m/%Y')})"
+        status = " (Inactif)" if not self.active else ""
+        return f"{self.from_currency} → {self.to_currency}: {self.rate} (le {self.created_at.strftime('%d/%m/%Y')}){status}"

@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load humanize %}
+
+{% block title %}{% trans "Historique" %} {{ from_currency }} → {{ to_currency }} - {{ site_name }}{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>
+                    <i class="bi bi-clock-history"></i> {% trans "Historique des Taux" %}
+                    <span class="badge bg-primary">{{ from_currency }}</span>
+                    <i class="bi bi-arrow-right mx-2"></i>
+                    <span class="badge bg-success">{{ to_currency }}</span>
+                </h1>
+                <div>
+                    <a href="{% url 'exchange_rate_list' %}" class="btn btn-secondary me-2">
+                        <i class="bi bi-arrow-left"></i> {% trans "Retour aux Taux" %}
+                    </a>
+                    <a href="{% url 'create_exchange_rate' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> {% trans "Nouveau Taux" %}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Rate Summary -->
+    {% if latest_rate %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-graph-up"></i> {% trans "Taux Actuel" %}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-4">
+                                <div class="text-center">
+                                    <h3 class="text-primary mb-0">{{ latest_rate.rate|floatformat:4 }}</h3>
+                                    <small class="text-muted">{{ from_currency }} → {{ to_currency }}</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-center">
+                            <span class="badge bg-{% if latest_rate.active %}success{% else %}secondary{% endif %} fs-6">
+                                {% if latest_rate.active %}{% trans "Actif" %}{% else %}{% trans "Inactif" %}{% endif %}
+                            </span>
+                                    <br><small class="text-muted">{% trans "Statut" %}</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-center">
+                                    <strong>{{ latest_rate.created_at|date:"d M Y" }}</strong>
+                                    <br><small class="text-muted">{% trans "Dernière mise à jour" %}</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Rate History -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-ul"></i> {% trans "Historique Complet" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if rates %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                <tr>
+                                    <th>{% trans "Taux" %}</th>
+                                    <th>{% trans "Statut" %}</th>
+                                    <th>{% trans "Changement" %}</th>
+                                    <th>{% trans "Défini par" %}</th>
+                                    <th>{% trans "Date" %}</th>
+                                    <th>{% trans "Actions" %}</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% for rate in rates %}
+                                    <tr class="{% if not rate.active %}table-secondary{% endif %}">
+                                        <td>
+                                            <span class="fw-bold fs-5">{{ rate.rate|floatformat:4 }}</span>
+                                        </td>
+                                        <td>
+                                        <span class="badge bg-{% if rate.active %}success{% else %}secondary{% endif %}">
+                                            {% if rate.active %}{% trans "Actif" %}{% else %}
+                                                {% trans "Inactif" %}{% endif %}
+                                        </span>
+                                        </td>
+                                        <td>
+                                            {% if forloop.counter0 > 0 %}
+                                                {% with prev_rate=rates|slice:forloop.counter0|slice:":1"|first %}
+                                                    {% if prev_rate %}
+                                                        {% if rate.rate > prev_rate.rate %}
+                                                            <span class="text-success">
+                                                            <i class="bi bi-arrow-up"></i> {% trans "Hausse" %}
+                                                        </span>
+                                                        {% elif rate.rate < prev_rate.rate %}
+                                                            <span class="text-danger">
+                                                            <i class="bi bi-arrow-down"></i> {% trans "Baisse" %}
+                                                        </span>
+                                                        {% else %}
+                                                            <span class="text-muted">{% trans "Stable" %}</span>
+                                                        {% endif %}
+                                                    {% else %}
+                                                        <span class="text-muted">—</span>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            {% else %}
+                                                <span class="text-muted">{% trans "Premier taux" %}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if rate.defined_by %}
+                                                <span class="badge {% if rate.defined_by.is_superuser %}bg-danger{% else %}bg-info{% endif %}">{{ rate.defined_by.get_user_type_display }}</span>
+                                                <br>
+                                                <small>{{ rate.defined_by.get_full_name|default:rate.defined_by.username }}</small>
+                                            {% else %}
+                                                <span class="text-muted">{% trans "Système" %}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <strong>{{ rate.created_at|date:"d M Y H:i" }}</strong>
+                                            <br><small
+                                                class="text-muted">{{ rate.created_at|naturaltime }}</small>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{% url 'update_exchange_rate' rate.id %}"
+                                                   class="btn btn-outline-primary btn-sm">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                {% if user.is_superuser %}
+                                                    <button type="button" class="btn btn-outline-danger btn-sm"
+                                                            onclick="deleteRate({{ rate.id }}, '{{ rate.from_currency }}', '{{ rate.to_currency }}')">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-clock-history display-1 text-muted"></i>
+                            <h4 class="mt-3">{% trans "Aucun historique trouvé" %}</h4>
+                            <p class="text-muted">{% trans "Aucun taux de change historique pour" %} {{ from_currency }}
+                                → {{ to_currency }}</p>
+                            <a href="{% url 'create_exchange_rate' %}" class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i> {% trans "Créer Premier Taux" %}
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-lightning"></i> {% trans "Actions Rapides" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-2">
+                            <a href="{% url 'exchange_rate_list' %}" class="btn btn-outline-primary w-100">
+                                <i class="bi bi-list"></i> {% trans "Tous les Taux" %}
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a href="{% url 'create_exchange_rate' %}" class="btn btn-outline-success w-100">
+                                <i class="bi bi-plus-circle"></i> {% trans "Nouveau Taux" %}
+                            </a>
+                        </div>
+                        {% if latest_rate %}
+                            <div class="col-md-3 mb-2">
+                                <a href="{% url 'update_exchange_rate' latest_rate.id %}"
+                                   class="btn btn-outline-warning w-100">
+                                    <i class="bi bi-pencil"></i> {% trans "Modifier Actuel" %}
+                                </a>
+                            </div>
+                        {% endif %}
+                        <div class="col-md-3 mb-2">
+                            <a href="{% url 'stock_list' %}" class="btn btn-outline-secondary w-100">
+                                <i class="bi bi-bank"></i> {% trans "Stocks" %}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        // Delete rate function (superuser only)
+        function deleteRate(rateId, fromCurrency, toCurrency) {
+            const confirmMsg = `{% trans "ATTENTION: Supprimer définitivement le taux" %} ${fromCurrency} → ${toCurrency} ?\n{% trans "Cette action ne peut pas être annulée." %}`;
+
+            if (confirm(confirmMsg)) {
+                fetch(`/stock/rates/${rateId}/delete/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'Content-Type': 'application/json',
+                    },
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload();
+                        } else {
+                            alert('{% trans "Erreur" %}: ' + data.error);
+                        }
+                    })
+                    .catch(error => {
+                        alert('{% trans "Erreur" %}: ' + error);
+                    });
+            }
+        }
+    </script>
+{% endblock %}

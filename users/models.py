@@ -60,8 +60,30 @@ class User(AbstractUser):
         return self.is_manager()
 
     def can_manage_commissions(self):
-        """Check if user can configure commissions"""
+        """Check if the user can configure commissions"""
         return self.is_manager()
+
+    def get_user_type_display(self) -> str:
+        """
+        Get a human-readable display of the user's type.
+        """
+        # Return the user type label based on the choices defined in USER_TYPES
+        # if user.is_superuser, return "Admin" else, "Unknown"
+        user_type = dict(self.USER_TYPES).get(self.user_type, "Unknown")
+        if self.is_superuser:
+            return "Admin"
+        return user_type
+
+    def format_user_display_name(self) -> str:
+        """Format a user's display name consistently across the app."""
+        if self.first_name and self.last_name:
+            return f"{self.first_name} {self.last_name}"
+        elif self.first_name:
+            return self.first_name
+        elif self.last_name:
+            return self.last_name
+        else:
+            return self.username
 
     def __str__(self):
         return f"{self.username} ({self.get_user_type_display()})"

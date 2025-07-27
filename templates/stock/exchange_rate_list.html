@@ -1,214 +1,402 @@
 {% extends 'base.html' %}
 {% load i18n %}
+{% load humanize %}
 
 {% block title %}{% trans "Taux de Change" %} - {{ site_name }}{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>
-                <i class="bi bi-currency-exchange"></i> {% trans "Taux de Change" %}
-            </h1>
-            <div>
-                <a href="{% url 'stock_list' %}" class="btn btn-outline-secondary me-2">
-                    <i class="bi bi-arrow-left"></i> {% trans "Retour aux Stocks" %}
-                </a>
-                <a href="{% url 'create_exchange_rate' %}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> {% trans "Ajouter Taux" %}
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Latest Rates Summary -->
-{% if latest_rates %}
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-graph-up"></i> {% trans "Taux de Change Actuels" %}
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    {% for rate in latest_rates %}
-                    <div class="col-md-4 mb-3">
-                        <div class="card border">
-                            <div class="card-body text-center">
-                                <h6 class="card-title">
-                                    <span class="badge bg-primary">{{ rate.from_currency }}</span>
-                                    <i class="bi bi-arrow-right mx-2"></i>
-                                    <span class="badge bg-success">{{ rate.to_currency }}</span>
-                                </h6>
-                                <h3 class="text-primary">{{ rate.rate|floatformat:4 }}</h3>
-                                <small class="text-muted">{% trans "Mis à jour" %} {{ rate.created_at|timesince }} {% trans "il y a" %}</small>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>
+                    <i class="bi bi-currency-exchange"></i> {% trans "Taux de Change" %}
+                </h1>
+                <div>
+                    <a href="{% url 'stock_list' %}" class="btn btn-outline-secondary me-2">
+                        <i class="bi bi-arrow-left"></i> {% trans "Retour aux Stocks" %}
+                    </a>
+                    <a href="{% url 'create_exchange_rate' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> {% trans "Ajouter Taux" %}
+                    </a>
                 </div>
             </div>
         </div>
     </div>
-</div>
-{% endif %}
 
-<!-- Exchange Rate History -->
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-clock-history"></i> {% trans "Historique des Taux de Change" %}
-                </h5>
+    <!-- Latest Rates Summary -->
+    {% if latest_rates %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-graph-up"></i> {% trans "Taux de Change Actuels" %}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            {% for rate in latest_rates %}
+                                <div class="col-md-4 mb-3">
+                                    <div class="card border">
+                                        <div class="card-body text-center">
+                                            <h6 class="card-title">
+                                                <span class="badge bg-primary">{{ rate.from_currency }}</span>
+                                                <i class="bi bi-arrow-right mx-2"></i>
+                                                <span class="badge bg-success">{{ rate.to_currency }}</span>
+                                            </h6>
+                                            <h3 class="text-primary">{{ rate.rate|floatformat:4 }}</h3>
+                                            <small class="text-muted">{% trans "Mis à jour " %} {{ rate.created_at|naturaltime }}</small>
+                                            <div class="mt-2">
+                                    <span class="badge bg-{% if rate.active %}success{% else %}secondary{% endif %}">
+                                        {% if rate.active %}{% trans "Actif" %}{% else %}
+                                            {% trans "Inactif" %}{% endif %}
+                                    </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="card-body">
-                {% if rates %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
+        </div>
+    {% endif %}
+
+    <!-- Smart Currency Converter -->
+    {% if latest_rates %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-calculator"></i> {% trans "Convertisseur de Devises" %}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <label class="form-label">{% trans "Montant" %}</label>
+                                <input type="number" class="form-control" id="convertAmount" value="100" min="0"
+                                       step="0.01">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">{% trans "De" %}</label>
+                                <select class="form-select" id="fromCurrency">
+                                    <option value="">{% trans "Choisir devise" %}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">{% trans "Vers" %}</label>
+                                <select class="form-select" id="toCurrency">
+                                    <option value="">{% trans "Choisir devise" %}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">{% trans "Résultat" %}</label>
+                                <div class="p-2 bg-light rounded fw-bold" id="conversionResult">
+                                    <span class="text-muted">{% trans "Sélectionnez les devises" %}</span>
+                                </div>
+                                <small class="text-muted" id="rateInfo"></small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Exchange Rate History -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-clock-history"></i> {% trans "Historique des Taux de Change" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if rates %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
                                 <tr>
                                     <th>{% trans "De" %}</th>
                                     <th>{% trans "Vers" %}</th>
                                     <th>{% trans "Taux" %}</th>
-                                    <th>{% trans "Défini Par" %}</th>
-                                    <th>{% trans "Créé" %}</th>
+                                    <th>{% trans "Statut" %}</th>
+                                    <th>{% trans "Défini par" %}</th>
+                                    <th>{% trans "Créé le" %}</th>
                                     <th>{% trans "Actions" %}</th>
                                 </tr>
-                            </thead>
-                            <tbody>
+                                </thead>
+                                <tbody>
                                 {% for rate in rates %}
-                                <tr>
-                                    <td>
-                                        <span class="badge bg-primary">{{ rate.from_currency }}</span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-success">{{ rate.to_currency }}</span>
-                                    </td>
-                                    <td>
-                                        <span class="fw-bold">{{ rate.rate|floatformat:4 }}</span>
-                                    </td>
-                                    <td>
-                                        {% if rate.defined_by %}
-                                            <span class="badge bg-info">{{ rate.defined_by.get_user_type_display }}</span>
-                                            {{ rate.defined_by.get_full_name|default:rate.defined_by.username }}
-                                        {% else %}
-                                            <span class="text-muted">{% trans "Système" %}</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="text-muted">{{ rate.created_at|date:"d M Y H:i" }}</td>
-                                    <td>
-                                        <a href="/admin/stock/exchangerate/{{ rate.id }}/change/" class="btn btn-sm btn-outline-primary">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                {% else %}
-                    <div class="text-center py-5">
-                        <i class="bi bi-currency-exchange display-1 text-muted"></i>
-                        <h4 class="mt-3">{% trans "Aucun taux de change défini" %}</h4>
-                        <p class="text-muted">{% trans "Créez votre premier taux de change pour permettre les conversions de devises." %}</p>
-                        <a href="{% url 'create_exchange_rate' %}" class="btn btn-primary">
-                            <i class="bi bi-plus-circle"></i> {% trans "Ajouter Taux de Change" %}
-                        </a>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-</div>
+                                    <tr class="{% if not rate.active %}table-secondary{% endif %}">
+                                        <td>
+                                            <span class="badge bg-primary">{{ rate.from_currency }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-success">{{ rate.to_currency }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="fw-bold">{{ rate.rate|floatformat:4 }}</span>
+                                        </td>
+                                        <td>
+                                        <span class="badge bg-{% if rate.active %}success{% else %}secondary{% endif %}">
+                                            {% if rate.active %}{% trans "Actif" %}{% else %}
+                                                {% trans "Inactif" %}{% endif %}
+                                        </span>
+                                        </td>
+                                        <td>
+                                            {% if rate.defined_by %}
+                                                <span class="badge {% if rate.defined_by.is_superuser %}bg-danger{% else %}bg-info{% endif %}">{{ rate.defined_by.get_user_type_display }}</span>
+                                                {{ rate.defined_by.get_full_name|default:rate.defined_by.username }}
+                                            {% else %}
+                                                <span class="text-muted">{% trans "Système" %}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-muted">{{ rate.created_at|date:"d M Y H:i" }}</td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <!-- Edit Button -->
+                                                <a href="{% url 'update_exchange_rate' rate.id %}"
+                                                   class="btn btn-outline-primary"
+                                                   data-bs-toggle="tooltip" title="{% trans 'Modifier' %}">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
 
-<!-- Currency Converter -->
-{% if latest_rates %}
-<div class="row mt-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-calculator"></i> {% trans "Convertisseur de Devises" %}
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3">
-                        <label class="form-label">{% trans "Montant" %}</label>
-                        <input type="number" class="form-control" id="convertAmount" value="100" min="0" step="0.01">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">{% trans "De" %}</label>
-                        <select class="form-select" id="fromCurrency">
-                            <option value="EUR">EUR</option>
-                            <option value="BIF">BIF</option>
-                            <option value="USD">USD</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">{% trans "Vers" %}</label>
-                        <select class="form-select" id="toCurrency">
-                            <option value="BIF">BIF</option>
-                            <option value="EUR">EUR</option>
-                            <option value="USD">USD</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">{% trans "Résultat" %}</label>
-                        <div class="p-2 bg-light rounded fw-bold" id="conversionResult">
-                            —
+                                                <!-- Toggle Active Button -->
+                                                <button type="button"
+                                                        class="btn btn-outline-{% if rate.active %}warning{% else %}success{% endif %}"
+                                                        onclick="toggleRateActive({{ rate.id }}, {{ rate.active|yesno:'true,false' }})"
+                                                        data-bs-toggle="tooltip" title="
+                                                        {% if rate.active %}{% trans 'Désactiver' %}{% else %}{% trans 'Activer' %}{% endif %}">
+                                                    <i class="bi bi-{% if rate.active %}pause{% else %}play{% endif %}"></i>
+                                                </button>
+
+                                                <!-- History Button -->
+                                                <a href="{% url 'exchange_rate_history' rate.from_currency rate.to_currency %}"
+                                                   class="btn btn-outline-info" data-bs-toggle="tooltip"
+                                                   title="{% trans 'Historique' %}">
+                                                    <i class="bi bi-clock-history"></i>
+                                                </a>
+
+                                                <!-- Delete Button (Superuser only) -->
+                                                {% if user.is_superuser %}
+                                                    <button type="button" class="btn btn-outline-danger"
+                                                            onclick="deleteRate({{ rate.id }}, '{{ rate.from_currency }}', '{{ rate.to_currency }}')"
+                                                            data-bs-toggle="tooltip"
+                                                            title="{% trans 'Supprimer définitivement' %}">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
                         </div>
-                    </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-currency-exchange display-1 text-muted"></i>
+                            <h4 class="mt-3">{% trans "Aucun taux de change défini" %}</h4>
+                            <p class="text-muted">{% trans "Créez votre premier taux de change pour permettre les conversions de devises." %}</p>
+                            <a href="{% url 'create_exchange_rate' %}" class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i> {% trans "Ajouter Taux de Change" %}
+                            </a>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
-</div>
-{% endif %}
 {% endblock %}
 
 {% block extra_js %}
-{% if latest_rates %}
-<script>
-const exchangeRates = {
-    {% for rate in latest_rates %}
-    "{{ rate.from_currency }}_{{ rate.to_currency }}": {{ rate.rate }},
-    {% endfor %}
-};
+    {% csrf_token %}
+    <script>
+        // Initialize tooltips
+        document.addEventListener('DOMContentLoaded', function () {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
 
-function convertCurrency() {
-    const amount = parseFloat(document.getElementById('convertAmount').value) || 0;
-    const fromCurrency = document.getElementById('fromCurrency').value;
-    const toCurrency = document.getElementById('toCurrency').value;
-    const resultDiv = document.getElementById('conversionResult');
+        // Toggle rate active status
+        function toggleRateActive(rateId, isActive) {
+            const action = isActive ? '{% trans "désactiver" %}' : '{% trans "activer" %}';
 
-    if (fromCurrency === toCurrency) {
-        resultDiv.textContent = `${amount.toFixed(2)} ${toCurrency}`;
-        return;
-    }
+            if (confirm(`{% trans "Êtes-vous sûr de vouloir" %} ${action} {% trans "ce taux de change ?" %}`)) {
+                fetch(`/stock/rates/${rateId}/toggle/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'Content-Type': 'application/json',
+                    },
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload();
+                        } else {
+                            alert('{% trans "Erreur" %}: ' + data.error);
+                        }
+                    })
+                    .catch(error => {
+                        alert('{% trans "Erreur" %}: ' + error);
+                    });
+            }
+        }
 
-    const rateKey = `${fromCurrency}_${toCurrency}`;
-    const rate = exchangeRates[rateKey];
+        // Delete rate (superuser only)
+        function deleteRate(rateId, fromCurrency, toCurrency) {
+            const confirmMsg = `{% trans "ATTENTION: Supprimer définitivement le taux" %} ${fromCurrency} → ${toCurrency} ?\n{% trans "Cette action ne peut pas être annulée." %}`;
 
-    if (rate) {
-        const result = amount * rate;
-        resultDiv.textContent = `${result.toFixed(2)} ${toCurrency}`;
-    } else {
-        resultDiv.textContent = '{% trans "Taux non disponible" %}';
-    }
-}
+            if (confirm(confirmMsg)) {
+                fetch(`/stock/rates/${rateId}/delete/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'Content-Type': 'application/json',
+                    },
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload();
+                        } else {
+                            alert('{% trans "Erreur" %}: ' + data.error);
+                        }
+                    })
+                    .catch(error => {
+                        alert('{% trans "Erreur" %}: ' + error);
+                    });
+            }
+        }
 
-document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('convertAmount').addEventListener('input', convertCurrency);
-    document.getElementById('fromCurrency').addEventListener('change', convertCurrency);
-    document.getElementById('toCurrency').addEventListener('change', convertCurrency);
+        // Smart Currency Converter
+        {% if latest_rates %}
+            console.log('Initializing smart currency converter...');
 
-    convertCurrency(); // Initial conversion
-});
-</script>
-{% endif %}
+            // Build exchange rates object and available currencies
+            const exchangeRates = {};
+            const availableCurrencies = new Set();
+
+            {% for rate in latest_rates %}
+                {% if rate.active %}
+                    exchangeRates["{{ rate.from_currency }}_{{ rate.to_currency }}"] = {{ rate.rate }};
+                    availableCurrencies.add("{{ rate.from_currency }}");
+                    availableCurrencies.add("{{ rate.to_currency }}");
+                    console.log('Added rate: {{ rate.from_currency }} → {{ rate.to_currency }} = {{ rate.rate }}');
+                {% endif %}
+            {% endfor %}
+
+            console.log('Available currencies:', Array.from(availableCurrencies));
+            console.log('All exchange rates:', exchangeRates);
+
+            // Populate currency dropdowns with only available currencies
+            function populateCurrencyDropdowns() {
+                const fromSelect = document.getElementById('fromCurrency');
+                const toSelect = document.getElementById('toCurrency');
+
+                if (!fromSelect || !toSelect) {
+                    console.error('Currency select elements not found!');
+                    return;
+                }
+
+                // Clear existing options (except first)
+                fromSelect.innerHTML = '<option value="">{% trans "Choisir devise" %}</option>';
+                toSelect.innerHTML = '<option value="">{% trans "Choisir devise" %}</option>';
+
+                // Add available currencies
+                availableCurrencies.forEach(currency => {
+                    fromSelect.innerHTML += `<option value="${currency}">${currency}</option>`;
+                    toSelect.innerHTML += `<option value="${currency}">${currency}</option>`;
+                });
+            }
+
+            // Smart conversion function
+            function convertCurrency() {
+                const amount = parseFloat(document.getElementById('convertAmount').value) || 0;
+                const fromCurrency = document.getElementById('fromCurrency').value;
+                const toCurrency = document.getElementById('toCurrency').value;
+                const resultDiv = document.getElementById('conversionResult');
+                const rateInfo = document.getElementById('rateInfo');
+
+                console.log(`Converting ${amount} from ${fromCurrency} to ${toCurrency}`);
+
+                // Reset if no currencies selected
+                if (!fromCurrency || !toCurrency) {
+                    resultDiv.innerHTML = '<span class="text-muted">{% trans "Sélectionnez les devises" %}</span>';
+                    rateInfo.textContent = '';
+                    return;
+                }
+
+                // Same currency
+                if (fromCurrency === toCurrency) {
+                    resultDiv.innerHTML = `<span class="text-info">${amount.toFixed(2)} ${toCurrency}</span>`;
+                    rateInfo.textContent = 'Même devise';
+                    return;
+                }
+
+                // Try direct conversion first
+                const directKey = `${fromCurrency}_${toCurrency}`;
+                let rate = exchangeRates[directKey];
+                let rateSource = '';
+
+                if (rate) {
+                    // Direct rate exists
+                    rateSource = `Taux direct: 1 ${fromCurrency} = ${rate} ${toCurrency}`;
+                    console.log(`Using direct rate: ${directKey} = ${rate}`);
+                } else {
+                    // Try reverse conversion
+                    const reverseKey = `${toCurrency}_${fromCurrency}`;
+                    const reverseRate = exchangeRates[reverseKey];
+
+                    if (reverseRate && reverseRate !== 0) {
+                        rate = 1 / reverseRate;
+                        rateSource = `Taux calculé (inverse): 1 ${fromCurrency} = ${rate.toFixed(6)} ${toCurrency}`;
+                        console.log(`Using reverse rate: 1/${reverseRate} = ${rate}`);
+                    }
+                }
+
+                if (rate) {
+                    const result = amount * rate;
+                    resultDiv.innerHTML = `<span class="text-success">${result.toFixed(2)} ${toCurrency}</span>`;
+                    rateInfo.textContent = rateSource;
+                    console.log(`Result: ${result.toFixed(2)} ${toCurrency}`);
+                } else {
+                    resultDiv.innerHTML = '<span class="text-danger">{% trans "Conversion impossible" %}</span>';
+                    rateInfo.textContent = 'Aucun taux disponible pour cette conversion';
+                    console.log('No conversion rate available');
+                }
+            }
+
+            // Initialize everything
+            document.addEventListener('DOMContentLoaded', function () {
+                console.log('DOM loaded, initializing calculator...');
+
+                populateCurrencyDropdowns();
+
+                const amountInput = document.getElementById('convertAmount');
+                const fromSelect = document.getElementById('fromCurrency');
+                const toSelect = document.getElementById('toCurrency');
+
+                if (amountInput && fromSelect && toSelect) {
+                    amountInput.addEventListener('input', convertCurrency);
+                    fromSelect.addEventListener('change', convertCurrency);
+                    toSelect.addEventListener('change', convertCurrency);
+
+                    console.log('Event listeners attached');
+                    convertCurrency(); // Initial calculation
+                } else {
+                    console.error('Calculator elements not found!');
+                }
+            });
+
+        {% endif %}
+    </script>
 {% endblock %}
