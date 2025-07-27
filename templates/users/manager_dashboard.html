@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% load i18n %}
 {% load static %}
+{% load humanize %}
 
 {% block title %}{% trans "Tableau de Bord Manager" %} - {{ site_name }}{% endblock %}
 
@@ -358,7 +359,7 @@
                                     </td>
                                     <td class="text-muted">
                                         <span data-bs-toggle="tooltip" title="{{ activity.timestamp|date:'F d, Y H:i:s' }}">
-                                            {% trans "il y a" %} {{ activity.timestamp|timesince }}
+                                            {{ activity.timestamp|naturaltime }}
                                         </span>
                                     </td>
                                     {% if user.is_superuser %}

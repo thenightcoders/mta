@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load i18n %}
+{% load humanize %}
 
 {% block title %}{% trans "Transferts en Attente" %} - {{ site_name }}{% endblock %}
 
@@ -120,7 +121,7 @@
                                     </td>
                                     <td class="text-muted">
                                         <span data-bs-toggle="tooltip" title="{{ transfer.created_at|date:'d/m/Y H:i' }}">
-                                            {{ transfer.created_at|timesince }} {% trans "il y a" %}
+                                            {{ transfer.created_at|naturaltime }}
                                         </span>
                                     </td>
                                     <td>

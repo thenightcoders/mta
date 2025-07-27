@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load i18n %}
+{% load humanize %}
 
 {% block title %}{% trans "Tableau de Bord Agent" %} - {{ site_name }}{% endblock %}
 
@@ -254,7 +255,7 @@
                                 {% for activity in my_activities %}
                                 <tr>
                                     <td>{{ activity.action|title }}</td>
-                                    <td class="text-muted">{{ activity.timestamp|timesince }} {% trans "il y a" %}</td>
+                                    <td class="text-muted">{{ activity.timestamp|naturaltime }}</td>
                                     <td class="text-muted small">
                                         {% if activity.details %}
                                             {{ activity.details|truncatechars:100 }}
