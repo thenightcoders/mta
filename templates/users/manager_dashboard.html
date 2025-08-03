@@ -19,7 +19,30 @@
     </div>
 </div>
 
-<!-- Stats Cards -->
+{% if transfer_stats.draft > 0 %}
+<div class="alert alert-warning" role="alert">
+    <div class="d-flex">
+        <i class="bi bi-exclamation-triangle me-3 mt-1"></i>
+        <div>
+            <h6 class="alert-heading">{% trans "Action Requise: Transferts en Brouillon" %}</h6>
+            <p class="mb-2">
+                {% blocktrans count counter=transfer_stats.draft %}
+                {{ counter }} transfert est en brouillon et nécessite une configuration de commission.
+                {% plural %}
+                {{ counter }} transferts sont en brouillon et nécessitent une configuration de commission.
+                {% endblocktrans %}
+            </p>
+            <a href="{% url 'draft_transfers' %}" class="btn btn-warning btn-sm me-2">
+                <i class="bi bi-eye"></i> {% trans "Voir Brouillons" %}
+            </a>
+            <a href="{% url 'create_commission_config' %}" class="btn btn-outline-warning btn-sm">
+                <i class="bi bi-gear"></i> {% trans "Configurer Commissions" %}
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <div class="row mb-4">
     <div class="col-md-3">
         <div class="card bg-primary text-white">
@@ -86,7 +109,6 @@
     </div>
 </div>
 
-<!-- Quick Actions -->
 <div class="row mb-4">
     <div class="col-12">
         <div class="card">
@@ -113,7 +135,15 @@
                         </a>
                     </div>
                     <div class="col-md-3 mb-2">
-                        <a href="{% url 'pending_transfers' %}" class="btn btn-outline-warning w-100">
+                        <a href="{% url 'draft_transfers' %}" class="btn btn-outline-secondary w-100">
+                            <i class="bi bi-file-earmark-text"></i> {% trans "Brouillons" %}
+                            {% if transfer_stats.draft > 0 %}
+                            <span class="badge bg-warning ms-1">{{ transfer_stats.draft }}</span>
+                            {% endif %}
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'transfer_list' %}?status=PENDING" class="btn btn-outline-warning w-100">
                             <i class="bi bi-clock"></i> {% trans "En Attente" %}
                         </a>
                     </div>
@@ -217,7 +247,7 @@
                     {% for commission in recent_commissions %}
                     <div class="d-flex justify-content-between align-items-center py-1">
                         <div>
-                            <small>{% trans "Transfert" %} #{{ commission.transfer.id }}</small>
+                            <small>{% trans "Transfert" %} #{{ commission.transfer.reference_id }}</small>
                             <br><small class="text-muted">{{ commission.agent.username }}</small>
                         </div>
                         <div class="text-end">
@@ -255,6 +285,7 @@
                         <table class="table table-sm">
                             <thead>
                                 <tr>
+                                    <th>{% trans "Référence" %}</th>
                                     <th>{% trans "Bénéficiaire" %}</th>
                                     <th>{% trans "Montant" %}</th>
                                     <th>{% trans "Agent" %}</th>
@@ -264,11 +295,12 @@
                             <tbody>
                                 {% for transfer in recent_transfers %}
                                 <tr>
+                                    <td>{{ transfer.reference_id }}</td>
                                     <td>{{ transfer.beneficiary_name }}</td>
                                     <td>{{ transfer.amount }} {{ transfer.sent_currency }}</td>
                                     <td>{{ transfer.agent.username }}</td>
                                     <td>
-                                        <span class="badge bg-{% if transfer.status == 'PENDING' %}warning{% elif transfer.status == 'VALIDATED' %}info{% elif transfer.status == 'COMPLETED' %}success{% else %}danger{% endif %}">
+                                        <span class="badge bg-{% if transfer.status == 'DRAFT' %}secondary{% elif transfer.status == 'PENDING' %}warning{% elif transfer.status == 'VALIDATED' %}info{% elif transfer.status == 'COMPLETED' %}success{% else %}danger{% endif %}">
                                             {{ transfer.get_status_display }}
                                         </span>
                                     </td>
@@ -335,6 +367,8 @@
                                                 {% for key, value in activity.details.items %}
                                                     {% if key == 'transfer_id' %}
                                                         <span class="badge bg-info">#{{ value }}</span>
+                                                    {% elif key == 'reference_id' %}
+                                                        <span class="badge bg-info">{{ value }}</span>
                                                     {% elif key == 'amount' %}
                                                         <span class="text-success fw-bold">{{ value }}</span>
                                                     {% elif key == 'currency' or key == 'sent_currency' %}
