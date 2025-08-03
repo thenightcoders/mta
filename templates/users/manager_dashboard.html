@@ -298,7 +298,7 @@
                                     <td>{{ transfer.reference_id }}</td>
                                     <td>{{ transfer.beneficiary_name }}</td>
                                     <td>{{ transfer.amount }} {{ transfer.sent_currency }}</td>
-                                    <td>{{ transfer.agent.username }}</td>
+                                    <td>{{ transfer.agent.format_user_display_name }}</td>
                                     <td>
                                         <span class="badge bg-{% if transfer.status == 'DRAFT' %}secondary{% elif transfer.status == 'PENDING' %}warning{% elif transfer.status == 'VALIDATED' %}info{% elif transfer.status == 'COMPLETED' %}success{% else %}danger{% endif %}">
                                             {{ transfer.get_status_display }}
