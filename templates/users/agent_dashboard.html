@@ -167,7 +167,7 @@
                                     <td>
                                         {% if transfer.commission %}
                                             <span class="text-success fw-bold">
-                                                +{{ transfer.commission.declaring_agent_amount }} {{ transfer.sent_currency }}
+                                                +{{ transfer.commission.declaring_agent_amount|floatformat:2 }} {{ transfer.sent_currency }}
                                             </span>
                                         {% else %}
                                             <span class="text-muted">-</span>
