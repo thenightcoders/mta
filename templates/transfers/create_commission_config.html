@@ -216,20 +216,77 @@
 {% block extra_js %}
 <script>
 function updateCommissionPreview() {
-    const commissionAmount = parseFloat(document.getElementById('{{ form.commission_amount.id_for_label }}').value) || 0;
-    const agentShare = parseFloat(document.getElementById('{{ form.agent_share.id_for_label }}').value) || 0;
-    const currency = document.getElementById('{{ form.currency.id_for_label }}').value || '';
+    const amount = document.getElementById('id_amount').value;
+    const sentCurrency = document.getElementById('id_sent_currency').value;
+    const receivedCurrency = document.getElementById('id_received_currency').value;
 
-    // Calculate fixed commission distribution
-    const totalCommission = commissionAmount;
-    const agentAmount = (totalCommission * agentShare) / 100;
-    const managerAmount = totalCommission - agentAmount;
-    const managerPercent = 100 - agentShare;
+    // Hide previews initially
+    document.getElementById('commission-preview').style.display = 'none';
+    document.getElementById('exchange-preview').style.display = 'none';
 
-    document.getElementById('totalCommission').textContent = totalCommission.toFixed(4) + ' ' + currency;
-    document.getElementById('agentAmount').textContent = agentAmount.toFixed(4) + ' ' + currency;
-    document.getElementById('managerAmount').textContent = managerAmount.toFixed(4) + ' ' + currency;
-    document.getElementById('managerPercent').textContent = managerPercent.toFixed(1) + '%';
+    if (!amount || !sentCurrency) {
+        return;
+    }
+
+    // Commission Preview
+    fetch(`{% url 'get_commission_preview' %}?amount=${amount}&currency=${sentCurrency}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.config_found) {
+                document.getElementById('commission-details').innerHTML = `
+                    <div class="row">
+                        <div class="col-md-4">
+                            <strong>Commission Totale:</strong><br>
+                            <span class="text-primary">${data.total_commission} ${data.currency}</span>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Part Agent (${data.agent_share_percent}%):</strong><br>
+                            <span class="text-success">${data.agent_amount} ${data.currency}</span>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Part Manager:</strong><br>
+                            <span class="text-info">${data.manager_amount} ${data.currency}</span>
+                        </div>
+                    </div>
+                    <small class="text-muted">Configuration: ${data.range} ${data.currency}</small>
+                `;
+                document.getElementById('commission-preview').style.display = 'block';
+            }
+        })
+        .catch(error => console.error('Commission preview error:', error));
+
+    // Exchange Rate Preview - ONLY if both currencies are selected AND different
+    if (receivedCurrency && sentCurrency !== receivedCurrency) {
+        // Check if exchange rate exists before showing preview
+        fetch(`{% url 'get_exchange_rate' %}?from=${sentCurrency}&to=${receivedCurrency}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.rate_found) {
+                    const convertedAmount = parseFloat(amount) * parseFloat(data.rate);
+                    document.getElementById('exchange-details').innerHTML = `
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Taux de Change:</strong><br>
+                                <span class="text-primary">1 ${sentCurrency} = ${data.rate} ${receivedCurrency}</span>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Montant Converti:</strong><br>
+                                <span class="text-success">${convertedAmount.toFixed(2)} ${receivedCurrency}</span>
+                            </div>
+                        </div>
+                        <small class="text-muted">Taux du ${data.rate_date}</small>
+                    `;
+                    document.getElementById('exchange-preview').style.display = 'block';
+                } else {
+                    // Don't show exchange preview if no rate exists
+                    document.getElementById('exchange-preview').style.display = 'none';
+                }
+            })
+            .catch(error => {
+                console.error('Exchange rate preview error:', error);
+                document.getElementById('exchange-preview').style.display = 'none';
+            });
+    }
 }
 
 document.addEventListener('DOMContentLoaded', function() {

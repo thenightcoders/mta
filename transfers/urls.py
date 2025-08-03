@@ -32,4 +32,6 @@ urlpatterns = [
     # Manual bulk promotion for when auto-promotion fails
     path('bulk-promote-config/<int:config_id>/', views.bulk_promote_by_config, name='bulk_promote_by_config'),
 
+    # Exchange rates
+    path('exchange-rate-preview/', views.get_exchange_rate, name='get_exchange_rate'),
 ]

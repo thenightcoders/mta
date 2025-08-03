@@ -829,3 +829,56 @@ def clear_commissions(request):
         return redirect('commissions_overview')
 
     return render(request, 'transfers/commissions_clear_form.html', {'agents': agents})
+
+
+@login_required
+def get_exchange_rate(request):
+    """AJAX endpoint to get 'exchange rate' for transfer creation preview"""
+    if request.method == 'GET':
+        from_currency = request.GET.get('from')
+        to_currency = request.GET.get('to')
+
+        if not from_currency or not to_currency:
+            return JsonResponse({'error': 'From and to currencies required'})
+
+        if from_currency == to_currency:
+            return JsonResponse({
+                'success': True,
+                'rate_found': True,
+                'rate': '1.0000',
+                'from_currency': from_currency,
+                'to_currency': to_currency,
+                'rate_date': 'Same currency'
+            })
+
+        try:
+            # Import here to avoid circular imports
+            from stock.models import ExchangeRate
+
+            # Get the most recent active exchange rate
+            exchange_rate = ExchangeRate.objects.filter(
+                    from_currency=from_currency,
+                    to_currency=to_currency,
+                    active=True
+            ).order_by('-created_at').first()
+
+            if exchange_rate:
+                return JsonResponse({
+                    'success': True,
+                    'rate_found': True,
+                    'rate': str(exchange_rate.rate),
+                    'from_currency': from_currency,
+                    'to_currency': to_currency,
+                    'rate_date': exchange_rate.created_at.strftime('%d/%m/%Y')
+                })
+            else:
+                return JsonResponse({
+                    'success': True,
+                    'rate_found': False,
+                    'message': f'Aucun taux de change configuré pour {from_currency} → {to_currency}'
+                })
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
