@@ -216,87 +216,45 @@
 {% block extra_js %}
 <script>
 function updateCommissionPreview() {
-    const amount = document.getElementById('id_amount').value;
-    const sentCurrency = document.getElementById('id_sent_currency').value;
-    const receivedCurrency = document.getElementById('id_received_currency').value;
+    // Get form field values
+    const commissionAmount = parseFloat(document.getElementById('id_commission_amount').value) || 0;
+    const agentShare = parseFloat(document.getElementById('id_agent_share').value) || 0;
+    const currency = document.getElementById('id_currency').value || '';
 
-    // Hide previews initially
-    document.getElementById('commission-preview').style.display = 'none';
-    document.getElementById('exchange-preview').style.display = 'none';
+    // Calculate commission distribution
+    const totalCommission = commissionAmount;
+    const agentAmount = (totalCommission * agentShare) / 100;
+    const managerAmount = totalCommission - agentAmount;
+    const managerPercent = 100 - agentShare;
 
-    if (!amount || !sentCurrency) {
-        return;
-    }
-
-    // Commission Preview
-    fetch(`{% url 'get_commission_preview' %}?amount=${amount}&currency=${sentCurrency}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success && data.config_found) {
-                document.getElementById('commission-details').innerHTML = `
-                    <div class="row">
-                        <div class="col-md-4">
-                            <strong>Commission Totale:</strong><br>
-                            <span class="text-primary">${data.total_commission} ${data.currency}</span>
-                        </div>
-                        <div class="col-md-4">
-                            <strong>Part Agent (${data.agent_share_percent}%):</strong><br>
-                            <span class="text-success">${data.agent_amount} ${data.currency}</span>
-                        </div>
-                        <div class="col-md-4">
-                            <strong>Part Manager:</strong><br>
-                            <span class="text-info">${data.manager_amount} ${data.currency}</span>
-                        </div>
-                    </div>
-                    <small class="text-muted">Configuration: ${data.range} ${data.currency}</small>
-                `;
-                document.getElementById('commission-preview').style.display = 'block';
-            }
-        })
-        .catch(error => console.error('Commission preview error:', error));
-
-    // Exchange Rate Preview - ONLY if both currencies are selected AND different
-    if (receivedCurrency && sentCurrency !== receivedCurrency) {
-        // Check if exchange rate exists before showing preview
-        fetch(`{% url 'get_exchange_rate' %}?from=${sentCurrency}&to=${receivedCurrency}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success && data.rate_found) {
-                    const convertedAmount = parseFloat(amount) * parseFloat(data.rate);
-                    document.getElementById('exchange-details').innerHTML = `
-                        <div class="row">
-                            <div class="col-md-6">
-                                <strong>Taux de Change:</strong><br>
-                                <span class="text-primary">1 ${sentCurrency} = ${data.rate} ${receivedCurrency}</span>
-                            </div>
-                            <div class="col-md-6">
-                                <strong>Montant Converti:</strong><br>
-                                <span class="text-success">${convertedAmount.toFixed(2)} ${receivedCurrency}</span>
-                            </div>
-                        </div>
-                        <small class="text-muted">Taux du ${data.rate_date}</small>
-                    `;
-                    document.getElementById('exchange-preview').style.display = 'block';
-                } else {
-                    // Don't show exchange preview if no rate exists
-                    document.getElementById('exchange-preview').style.display = 'none';
-                }
-            })
-            .catch(error => {
-                console.error('Exchange rate preview error:', error);
-                document.getElementById('exchange-preview').style.display = 'none';
-            });
-    }
+    // Update the preview display
+    document.getElementById('totalCommission').textContent =
+        totalCommission > 0 ? `${totalCommission.toFixed(2)} ${currency}` : '-';
+    document.getElementById('agentAmount').textContent =
+        agentAmount > 0 ? `${agentAmount.toFixed(2)} ${currency}` : '-';
+    document.getElementById('managerAmount').textContent =
+        managerAmount > 0 ? `${managerAmount.toFixed(2)} ${currency}` : '-';
+    document.getElementById('managerPercent').textContent =
+        managerPercent >= 0 ? `${managerPercent.toFixed(1)}%` : '-';
 }
+
 
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('commission-form');
     const submitBtn = document.getElementById('submit-btn');
     const spinner = submitBtn.querySelector('.spinner-border');
 
-    const commissionAmountInput = document.getElementById('{{ form.commission_amount.id_for_label }}');
-    const agentShareInput = document.getElementById('{{ form.agent_share.id_for_label }}');
-    const currencyInput = document.getElementById('{{ form.currency.id_for_label }}');
+    // Event listeners for live preview
+    const commissionAmountInput = document.getElementById('id_commission_amount');
+    const agentShareInput = document.getElementById('id_agent_share');
+    const currencyInput = document.getElementById('id_currency');
+
+    if (commissionAmountInput) commissionAmountInput.addEventListener('input', updateCommissionPreview);
+    if (agentShareInput) agentShareInput.addEventListener('input', updateCommissionPreview);
+    if (currencyInput) currencyInput.addEventListener('change', updateCommissionPreview);
+
+    // Initial calculation when page loads
+    updateCommissionPreview();
 
     // Live preview updates
     commissionAmountInput.addEventListener('input', updateCommissionPreview);
