@@ -213,7 +213,7 @@
                                         <span class="text-success fw-bold">{{ c.declaring_agent_amount|floatformat:2 }} €</span>
                                     </td>
                                     <td>
-                                        <span class="badge bg-success">{{ c.transfer.validated_by.username }}</span>
+                                        <span class="badge bg-success">{{ c.transfer.validated_by.format_user_display_name }}</span>
                                     </td>
                                     <td>
                                         <code class="small">#{{ c.id }}</code>
