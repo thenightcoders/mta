@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
+from django.utils.translation import gettext_lazy as _
 
 User = get_user_model()
 
@@ -20,6 +21,7 @@ WITHDRAWAL_METHOD = [
 ]
 
 TRANSFER_STATUS = [
+    ('DRAFT', 'Brouillon'),
     ('PENDING', 'En attente'),
     ('VALIDATED', 'Validé'),
     ('COMPLETED', 'Complété'),
@@ -65,7 +67,8 @@ class Transfer(models.Model):
     sent_currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, verbose_name="Devise envoyée")
     received_currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, verbose_name="Devise reçue")
     comment = models.TextField(blank=True, null=True, verbose_name="Commentaire")
-    status = models.CharField(max_length=10, choices=TRANSFER_STATUS, default='PENDING', verbose_name="Statut")
+    status = models.CharField(max_length=10, choices=TRANSFER_STATUS, default='DRAFT',
+                              verbose_name="Statut")  # Changed default
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Créé le")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Modifié le")
 
@@ -96,7 +99,7 @@ class Transfer(models.Model):
     class Meta:
         ordering = ['-created_at']
         indexes = [
-            models.Index(fields=['reference_id']),  # Add index for reference_id lookups
+            models.Index(fields=['reference_id']),
             models.Index(fields=['status', '-created_at']),
             models.Index(fields=['agent', '-created_at']),
             models.Index(fields=['validated_by', '-created_at']),
@@ -117,15 +120,59 @@ class Transfer(models.Model):
         # Business rule validations
         if self.beneficiary_phone and not self.beneficiary_phone.startswith('+'):
             raise ValidationError(
-                    "Le numéro de téléphone doit commencer par +(indicatif telephonique international: 257, 32, 33, etc.")
+                    _("Le numéro de téléphone doit commencer par +(indicatif téléphonique international: 257, 32, 33, etc."))
 
     def can_be_validated_by(self, user):
         """Check if the user can validate this transfer"""
-        return (user.is_manager() or user.is_superuser) and self.status == 'PENDING'
+        return user.is_manager() and self.status == 'PENDING'
 
     def can_be_executed_by(self, user):
         """Check if the user can execute this transfer"""
-        return (user.is_manager() or user.is_superuser) and self.status == 'VALIDATED'
+        return user.is_manager() and self.status == 'VALIDATED'
+
+    def can_be_promoted_by(self, user):
+        """Check if the user can promote transfer from DRAFT to PENDING"""
+        # Agents can promote their own drafts, managers can promote any drafts
+        if self.status != 'DRAFT':
+            return False
+
+        if user.is_manager():
+            return True
+
+        return self.agent == user
+
+    def has_commission_config_available(self):
+        """Check if commission config exists for this transfer"""
+        return CommissionConfig.objects.filter(
+                currency=self.sent_currency,
+                min_amount__lte=self.amount,
+                max_amount__gte=self.amount,
+                active=True
+        ).exists()
+
+    def promote_to_pending(self, promoted_by=None):
+        """Promote transfer from DRAFT to PENDING if commission config available"""
+        if self.status != 'DRAFT':
+            raise ValidationError(f"Cannot promote transfer with status {self.status}")
+
+        if not self.has_commission_config_available():
+            raise ValidationError(_("No commission configuration available for this transfer"))
+
+        self.status = 'PENDING'
+        if promoted_by:
+            self.agent = promoted_by
+        self.save()
+        return True
+
+    def get_commission_rate(self):
+        """Get the applicable commission rate for this transfer"""
+        if self.status in ['DRAFT', 'PENDING']:
+            return None
+
+        commission = getattr(self, 'commission', None)
+        if commission and commission.config_used:
+            return commission.config_used.commission_amount  # Now it's amount, not rate
+        return None
 
     def get_commission_amount(self):
         """Get the total commission amount for this transfer"""
@@ -146,7 +193,7 @@ class CommissionConfig(models.Model):
     min_amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Montant minimum")
     max_amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Montant maximum")
     commission_amount = models.DecimalField(max_digits=12, decimal_places=4,
-                                          verbose_name="Montant de commission")  # Fixed amount in currency
+                                            verbose_name="Montant de commission")  # Fixed amount in currency
     agent_share = models.DecimalField(max_digits=5, decimal_places=2,
                                       verbose_name="Part agent (%)")  # % of the commission
     currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, verbose_name="Devise")
@@ -261,7 +308,8 @@ class CommissionDistribution(models.Model):
 
         # Use fixed commission amount (not percentage)
         total_commission = commission_config.commission_amount
-        agent_amount = (total_commission * commission_config.agent_share) / 100 if not (transfer.agent.is_manager()) else 0
+        agent_amount = (total_commission * commission_config.agent_share) / 100 if not (
+            transfer.agent.is_manager()) else 0
         manager_amount = total_commission - agent_amount
 
         return {
