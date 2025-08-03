@@ -548,7 +548,7 @@ class UserProfileService:
                     setattr(self.user, field, value)
 
         # Additional fields only managers/superusers can update
-        if updater.is_manager() or updater.is_superuser:
+        if updater.is_manager():
             manager_fields = ['first_name', 'last_name', 'email']
             for field in manager_fields:
                 if field in profile_data:

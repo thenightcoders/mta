@@ -366,7 +366,7 @@ def profile(request):
             }
 
             # Additional fields for managers/superusers
-            if request.user.is_manager() or request.user.is_superuser:
+            if request.user.is_manager():
                 profile_data.update({
                     'first_name': request.POST.get('first_name', '').strip(),
                     'last_name': request.POST.get('last_name', '').strip(),
