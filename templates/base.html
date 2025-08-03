@@ -182,7 +182,7 @@
                         <li><a class="dropdown-item" href="{% url 'profile' %}">
                             <i class="bi bi-person"></i> {% trans "Profil" %}
                         </a></li>
-                        {% if user.is_manager or user.is_superuser %}
+                        {% if user.is_superuser %}
                         <li>
                             <hr class="dropdown-divider">
                         </li>
