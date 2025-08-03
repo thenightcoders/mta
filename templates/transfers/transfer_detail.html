@@ -105,7 +105,7 @@
         <!-- Commission Details -->
         {% if commission %}
         <div class="card mb-4">
-            {% if transfer.agent.is_manager %}
+            {% if request.user.is_manager %}
             <div class="card-header">
                 <h5 class="mb-0">{% trans "Détails de la Commission" %}</h5>
             </div>
