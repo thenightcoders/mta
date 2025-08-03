@@ -611,7 +611,7 @@ def update_commission_config(request, config_id):
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON data'}, status=400)
 
-@login_required
+
 def create_commission_for_transfer(transfer):
     """Helper function to create commission for a validated transfer"""
     # Find applicable commission config for the transfer currency and amount
