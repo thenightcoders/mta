@@ -203,7 +203,7 @@
                                     <td class="text-muted">{{ c.created_at|date:"d/m/Y H:i" }}</td>
                                     <td>
                                         <a href="{% url 'transfer_detail' transfer_id=c.transfer.id %}" class="btn btn-sm btn-outline-info">
-                                            <i class="bi bi-eye"></i> #{{ c.transfer.id }}
+                                            <i class="bi bi-eye"></i> #{{ c.transfer.reference_id }}
                                         </a>
                                     </td>
                                     <td>
