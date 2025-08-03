@@ -105,6 +105,7 @@
         <!-- Commission Details -->
         {% if commission %}
         <div class="card mb-4">
+            {% if transfer.agent.is_manager %}
             <div class="card-header">
                 <h5 class="mb-0">{% trans "Détails de la Commission" %}</h5>
             </div>
@@ -112,18 +113,29 @@
                 <div class="row">
                     <div class="col-md-4">
                         <p><strong>{% trans "Commission Totale" %}:</strong></p>
-                        <h4 class="text-primary">{{ commission.total_commission }} {{ transfer.sent_currency }}</h4>
+                        <h4 class="text-primary">{{ commission.total_commission|floatformat:2 }} {{ transfer.sent_currency }}</h4>
                     </div>
                     <div class="col-md-4">
                         <p><strong>{% trans "Part de l'Agent" %}:</strong></p>
-                        <h5 class="text-success">{{ commission.declaring_agent_amount }} {{ transfer.sent_currency }}</h5>
+                        <h5 class="text-success">{{ commission.declaring_agent_amount|floatformat:2 }} {{ transfer.sent_currency }}</h5>
                     </div>
                     <div class="col-md-4">
                         <p><strong>{% trans "Part du Manager" %}:</strong></p>
-                        <h5 class="text-info">{{ commission.manager_amount }} {{ transfer.sent_currency }}</h5>
+                        <h5 class="text-info">{{ commission.manager_amount|floatformat:2 }} {{ transfer.sent_currency }}</h5>
                     </div>
                 </div>
             </div>
+            {% else %}
+                <div class="card-header">
+                    <h5 class="mb-0">{% trans "Votre Commission" %}</h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-2">
+                        <h3 class="text-success mb-1">{{ commission.declaring_agent_amount|floatformat:2 }} {{ transfer.sent_currency }}</h3>
+                        <small class="text-muted">{% trans "Votre part de commission" %}</small>
+                    </div>
+                </div>
+            {% endif %}
         </div>
         {% endif %}
     </div>
