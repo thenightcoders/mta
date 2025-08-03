@@ -260,11 +260,11 @@ function calculateCommission() {
                     <div class="row">
                         <div class="col-4">
                             <small class="text-muted">{% trans "Vous gagnerez" %}:</small>
-                            <div class="fw-bold text-success">${data.agent_amount.toFixed(4)} ${currency}</div>
+                            <div class="fw-bold text-success">${data.agent_amount.toFixed(2)} ${currency}</div>
                         </div>
                         <div class="col-4">
                             <small class="text-muted">{% trans "Commission fixe" %}:</small>
-                            <div class="fw-bold">${data.total_commission.toFixed(4)} ${currency}</div>
+                            <div class="fw-bold">${data.total_commission.toFixed(2)} ${currency}</div>
                         </div>
                         <div class="col-4">
                             <small class="text-muted">{% trans "Votre part" %}:</small>
