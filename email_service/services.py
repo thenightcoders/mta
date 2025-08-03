@@ -21,7 +21,7 @@ except ImportError:
 
 def send_password_setup_email(user_id: int, base_url: str) -> bool:
     """
-    Send password setup email to a new user.
+    Send a password setup email to a new user.
     This is the main function that other apps will call.
 
     Args:
@@ -204,6 +204,53 @@ def send_user_notification_email(user_id: int, notification_type: str,
                         "Status: {transfer_status}\n\n"
                         "Best regards,\n{site_name} Team"
                 )
+            },
+            'draft_transfer_created': {
+                'subject_key': 'draft_transfer_subject',
+                'template': 'draft_transfer_notification',
+                'fallback_message': _(
+                        "Hello {name},\n\n"
+                        "A new draft transfer requires your attention:\n\n"
+                        "Reference: {transfer_reference}\n"
+                        "Amount: {transfer_amount} {transfer_currency}\n"
+                        "Beneficiary: {beneficiary_name}\n"
+                        "Agent: {agent_name}\n"
+                        "Created: {created_at}\n\n"
+                        "No commission configuration matches this amount ({missing_range}). "
+                        "Please configure appropriate commissions to enable automatic processing.\n\n"
+                        "Log in to the platform to configure commissions.\n\n"
+                        "Best regards,\n{site_name} Team"
+                )
+            },
+
+            'transfers_auto_promoted': {
+                'subject_key': 'auto_promotion_subject',
+                'template': 'auto_promotion_notification',
+                'fallback_message': _(
+                        "Hello {name},\n\n"
+                        "Great news! {promoted_count} of your draft transfers have been automatically "
+                        "promoted to 'Pending' thanks to a new commission configuration.\n\n"
+                        "Configuration: {config_currency} [{config_range}] - Commission: {commission_amount}\n"
+                        "Configured by: {manager_name}\n\n"
+                        "Your transfers are now pending validation by a manager.\n\n"
+                        "Log in to see the updated status.\n\n"
+                        "Best regards,\n{site_name} Team"
+                )
+            },
+
+            'transfer_manually_promoted': {
+                'subject_key': 'manual_promotion_subject',
+                'template': 'manual_promotion_notification',
+                'fallback_message': _(
+                        "Hello {name},\n\n"
+                        "Your draft transfer has been manually promoted to 'Pending':\n\n"
+                        "Reference: {transfer_reference}\n"
+                        "Amount: {transfer_amount} {transfer_currency}\n"
+                        "Beneficiary: {beneficiary_name}\n"
+                        "Promoted by: {promoted_by_name} ({promoted_by_role})\n\n"
+                        "Your transfer is now pending validation.\n\n"
+                        "Best regards,\n{site_name} Team"
+                )
             }
         }
 
@@ -226,10 +273,10 @@ def send_user_notification_email(user_id: int, notification_type: str,
                 site_name=email_context['site_name_formal']
         )
 
-        # Get template path
+        # Get the template path
         template_path = get_email_template_path(config['template'])
 
-        # Create fallback message
+        # Create a fallback message
         fallback_message = config['fallback_message'].format(
                 name=user.get_full_name() or user.username,
                 site_name=email_context['site_name_formal'],
@@ -273,17 +320,7 @@ def send_admin_notification(subject: str, message: str, notification_type: str =
                             context: Optional[Dict[str, Any]] = None,
                             user_id: Optional[int] = None) -> bool:
     """
-    Send notification email to admins about important system events.
-
-    Args:
-        subject (str): Email subject
-        message (str): Email message
-        notification_type (str): Type of notification for categorization
-        context (dict, optional): Additional context for templates
-        user_id (int, optional): User ID if notification is user-related
-
-    Returns:
-        bool: True if email was sent/queued successfully
+    Send a notification email to admins about important system events.
     """
     try:
         if not has_required_email_settings():
@@ -353,15 +390,8 @@ def send_admin_notification(subject: str, message: str, notification_type: str =
 
 def send_bulk_user_emails(email_list: List[Dict[str, Any]]) -> Dict[str, Any]:
     """
-    Send multiple emails to users in batch.
+    Send multiple emails to users in a batch.
     Useful for newsletters, announcements, etc.
-
-    Args:
-        email_list (List[Dict]): List of email configurations
-            Each dict should contain: user_id, notification_type, context
-
-    Returns:
-        Dict: Results summary with success/failure counts
     """
     try:
         if not has_required_email_settings():
@@ -414,15 +444,6 @@ def send_transfer_notification_email(user_id: int, transfer_id: int,
     """
     Send transfer-related notification emails.
     Specific to the money transfer business logic.
-
-    Args:
-        user_id (int): User to notify
-        transfer_id (int): Transfer ID
-        status_change (str): New status or action
-        context (dict, optional): Additional transfer context
-
-    Returns:
-        bool: True if email sent successfully
     """
     try:
         # Build transfer-specific context
@@ -465,14 +486,6 @@ def notify_admin_of_user_action(user_id: int, action: str, details: Optional[Dic
     """
     Notify admins of important user actions.
     Used for security alerts, suspicious activity, etc.
-
-    Args:
-        user_id (int): User who performed the action
-        action (str): Action performed
-        details (dict, optional): Additional action details
-
-    Returns:
-        bool: True if notification sent successfully
     """
     try:
         # Get user info
@@ -517,15 +530,6 @@ def send_system_alert_email(alert_type: str, message: str, severity: str = 'medi
                             context: Optional[Dict] = None) -> bool:
     """
     Send system alerts to admins for technical issues, security concerns, etc.
-
-    Args:
-        alert_type (str): Type of alert (security, error, performance, etc.)
-        message (str): Alert message
-        severity (str): Alert severity (low, medium, high, critical)
-        context (dict, optional): Additional context
-
-    Returns:
-        bool: True if alert sent successfully
     """
     try:
         subject = f"[{severity.upper()}] System Alert: {alert_type}"
@@ -554,4 +558,185 @@ def send_system_alert_email(alert_type: str, message: str, severity: str = 'medi
 
     except Exception as e:
         logger.error(f"System alert email failed: {e}", exc_info=True)
+        return False
+
+
+def notify_managers_of_draft_transfer(transfer_id: int, agent_id: int) -> Dict[str, Any]:
+    """
+    Notify all managers when an agent creates a draft transfer due to missing commission config.
+    Uses existing bulk email infrastructure.
+    """
+    try:
+        if not has_required_email_settings():
+            logger.warning("Email not configured, cannot send draft transfer notifications")
+            return {'success': 0, 'failed': 0, 'total': 0, 'errors': ['Email not configured']}
+
+        # Import here to avoid circular imports
+        from django.contrib.auth import get_user_model
+        from transfers.models import Transfer
+
+        User = get_user_model()
+
+        # Get transfer and agent details
+        try:
+            transfer = Transfer.objects.select_related('agent').get(id=transfer_id)
+            agent = User.objects.get(id=agent_id)
+        except (Transfer.DoesNotExist, User.DoesNotExist) as e:
+            logger.error(f"Draft transfer notification failed: {e}")
+            return {'success': 0, 'failed': 0, 'total': 0, 'errors': [str(e)]}
+
+        # Get all active managers
+        managers = User.objects.filter(user_type='MANAGER', is_active=True).exclude(email='')
+
+        if not managers.exists():
+            logger.warning("No active managers found to notify about draft transfer")
+            return {'success': 0, 'failed': 0, 'total': 0, 'errors': ['No managers to notify']}
+
+        # Prepare an email list using the existing bulk email system
+        email_list = []
+        for manager in managers:
+            email_list.append({
+                'user_id': manager.id,
+                'notification_type': 'draft_transfer_created',
+                'context': {
+                    'transfer_reference': transfer.reference_id,
+                    'transfer_amount': str(transfer.amount),
+                    'transfer_currency': transfer.sent_currency,
+                    'beneficiary_name': transfer.beneficiary_name,
+                    'agent_name': agent.get_full_name() or agent.username,
+                    'agent_username': agent.username,
+                    'missing_range': f"{transfer.amount} {transfer.sent_currency}",
+                    'created_at': transfer.created_at.strftime('%d/%m/%Y %H:%M')
+                }
+            })
+
+        # Use the existing bulk email function
+        results = send_bulk_user_emails(email_list)
+
+        logger.info(f"Draft transfer notification completed: {results['success']} success, {results['failed']} failed")
+        return results
+
+    except Exception as e:
+        logger.error(f"Draft transfer notification service failed: {e}", exc_info=True)
+        return {'success': 0, 'failed': 1, 'total': 1, 'errors': [str(e)]}
+
+
+def notify_agents_of_auto_promotion(promoted_transfers: list, commission_config_id: int) -> Dict[str, Any]:
+    """
+    Notify agents when their draft transfers are auto-promoted due to new commission config.
+    Uses existing bulk email infrastructure.
+    """
+    try:
+        if not has_required_email_settings():
+            logger.warning("Email not configured, cannot send auto-promotion notifications")
+            return {'success': 0, 'failed': 0, 'total': 0, 'errors': ['Email not configured']}
+
+        # Import here to avoid circular imports
+        from django.contrib.auth import get_user_model
+        from transfers.models import CommissionConfig
+
+        User = get_user_model()
+
+        # Get commission config details
+        try:
+            config = CommissionConfig.objects.select_related('manager').get(id=commission_config_id)
+        except CommissionConfig.DoesNotExist:
+            logger.error(f"Commission config {commission_config_id} not found for auto-promotion notification")
+            return {'success': 0, 'failed': 0, 'total': 0, 'errors': ['Commission config not found']}
+
+        # Group transfers by agent
+        agent_transfers = {}
+        for transfer_data in promoted_transfers:
+            agent_username = transfer_data.get('agent')
+            if agent_username and agent_username != 'No agent':
+                if agent_username not in agent_transfers:
+                    agent_transfers[agent_username] = []
+                agent_transfers[agent_username].append(transfer_data)
+
+        if not agent_transfers:
+            logger.info("No agents to notify for auto-promotion")
+            return {'success': 0, 'failed': 0, 'total': 0, 'errors': []}
+
+        # Prepare an email list using the existing bulk email system
+        email_list = []
+        for agent_username, transfers in agent_transfers.items():
+            try:
+                agent = User.objects.get(username=agent_username, is_active=True)
+                if agent.email:
+                    email_list.append({
+                        'user_id': agent.id,
+                        'notification_type': 'transfers_auto_promoted',
+                        'context': {
+                            'promoted_count': len(transfers),
+                            'config_currency': config.currency,
+                            'config_range': f"{config.min_amount} - {config.max_amount}",
+                            'commission_amount': str(config.commission_amount),
+                            'manager_name': config.manager.get_full_name() or config.manager.username
+                        }
+                    })
+                else:
+                    logger.warning(f"Agent {agent_username} has no email address for auto-promotion notification")
+            except User.DoesNotExist:
+                logger.warning(f"Agent {agent_username} not found for auto-promotion notification")
+
+        if not email_list:
+            logger.warning("No agents with email addresses found for auto-promotion notification")
+            return {'success': 0, 'failed': 0, 'total': 0, 'errors': ['No agents with emails']}
+
+        # Use the existing bulk email function
+        results = send_bulk_user_emails(email_list)
+
+        logger.info(f"Auto-promotion notification completed: {results['success']} success, {results['failed']} failed")
+        return results
+
+    except Exception as e:
+        logger.error(f"Auto-promotion notification service failed: {e}", exc_info=True)
+        return {'success': 0, 'failed': 1, 'total': 1, 'errors': [str(e)]}
+
+
+def notify_agent_of_manual_promotion(transfer_id: int, promoted_by_user_id: int) -> bool:
+    """
+    Notify the agent when their draft transfer is manually promoted by a manager.
+    Uses existing single email infrastructure.
+    """
+    try:
+        if not has_required_email_settings():
+            logger.warning("Email not configured, cannot send manual promotion notification")
+            return False
+
+        # Import here to avoid circular imports
+        from django.contrib.auth import get_user_model
+        from transfers.models import Transfer
+
+        User = get_user_model()
+
+        # Get transfer and user details
+        try:
+            transfer = Transfer.objects.select_related('agent').get(id=transfer_id)
+            promoted_by = User.objects.get(id=promoted_by_user_id)
+        except (Transfer.DoesNotExist, User.DoesNotExist) as e:
+            logger.error(f"Manual promotion notification failed: {e}")
+            return False
+
+        # Only notify if agent has email
+        if not transfer.agent or not transfer.agent.email:
+            logger.info(f"No agent email for manual promotion notification of transfer {transfer_id}")
+            return True  # Not an error, just no email to send
+
+        # Use existing single email function
+        return send_user_notification_email(
+                user_id=transfer.agent.id,
+                notification_type='transfer_manually_promoted',
+                context={
+                    'transfer_reference': transfer.reference_id,
+                    'transfer_amount': str(transfer.amount),
+                    'transfer_currency': transfer.sent_currency,
+                    'beneficiary_name': transfer.beneficiary_name,
+                    'promoted_by_name': promoted_by.get_full_name() or promoted_by.username,
+                    'promoted_by_role': 'Manager' if promoted_by.is_manager() else 'Superuser'
+                }
+        )
+
+    except Exception as e:
+        logger.error(f"Manual promotion notification failed for transfer {transfer_id}: {e}", exc_info=True)
         return False
