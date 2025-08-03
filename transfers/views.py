@@ -14,12 +14,14 @@ from django.views.decorators.http import require_http_methods
 from users.models import User, log_user_activity
 from .forms import CommissionConfigForm, TransferForm
 from .models import CommissionConfig, CommissionDistribution, TRANSFER_STATUS, Transfer
+from .services import bulk_promote_draft_transfers
 
+logger = __import__('logging').getLogger(__name__)
 
 @login_required
 def transfer_list(request):
     """List transfers based on user permissions"""
-    if request.user.is_manager() or request.user.is_superuser:
+    if request.user.is_manager():
         transfers = Transfer.objects.all().select_related('agent', 'validated_by', 'executed_by')
     else:
         transfers = Transfer.objects.filter(agent=request.user).select_related('agent', 'validated_by', 'executed_by')
@@ -47,25 +49,93 @@ def create_transfer(request):
         form = TransferForm(request.POST)
         if form.is_valid():
             try:
-
                 transfer = form.save(commit=False)
                 transfer.agent = request.user
-                transfer.save()
 
-                log_user_activity(
-                        request.user,
-                        'transfer_created',
-                        {'transfer_id': transfer.id, 'beneficiary': transfer.beneficiary_name},
-                        request
-                )
+                # Check if commission config exists for this transfer
+                commission_config = CommissionConfig.objects.filter(
+                        currency=transfer.sent_currency,
+                        min_amount__lte=transfer.amount,
+                        max_amount__gte=transfer.amount,
+                        active=True
+                ).first()
 
-                messages.success(request, f'Transfer #{transfer.id} created successfully')
+                if commission_config:
+                    # Commission config exists - transfer can go to PENDING
+                    transfer.status = 'PENDING'
+                    transfer.save()
+
+                    log_user_activity(
+                            request.user,
+                            'transfer_created',
+                            {
+                                'transfer_id': transfer.id,
+                                'reference_id': transfer.reference_id,
+                                'beneficiary': transfer.beneficiary_name,
+                                'amount': str(transfer.amount),
+                                'currency': transfer.sent_currency,
+                                'status': 'PENDING',
+                                'commission_config_available': True
+                            },
+                            request
+                    )
+
+                    messages.success(
+                            request,
+                            f'Transfer {transfer.reference_id} créé avec succès et mis en attente de validation.'
+                    )
+                else:
+                    # No commission config - transfer stays in DRAFT
+                    transfer.status = 'DRAFT'
+                    transfer.save()
+
+                    log_user_activity(
+                            request.user,
+                            'transfer_created_as_draft',
+                            {
+                                'transfer_id': transfer.id,
+                                'reference_id': transfer.reference_id,
+                                'beneficiary': transfer.beneficiary_name,
+                                'amount': str(transfer.amount),
+                                'currency': transfer.sent_currency,
+                                'status': 'DRAFT',
+                                'commission_config_available': False
+                            },
+                            request
+                    )
+
+                    if request.user.is_manager():
+                        # Manager created draft - show them the issue
+                        messages.warning(
+                                request,
+                                f'Transfer {transfer.reference_id} créé en brouillon. '
+                                f'Aucune configuration de commission trouvée pour {transfer.amount} {transfer.sent_currency}. '
+                                f'Veuillez configurer les commissions puis promouvoir ce transfert.'
+                        )
+                    else:
+                        # Agent created draft - notify managers will be contacted
+                        messages.warning(
+                                request,
+                                f'Transfer {transfer.reference_id} créé en brouillon car aucune configuration de commission '
+                                f'n\'existe pour {transfer.amount} {transfer.sent_currency}. '
+                                f'Les managers ont été notifiés et le transfert sera automatiquement traité une fois la '
+                                f'configuration ajoutée.'
+                        )
+
+                        try:
+                            from .services import notify_managers_of_draft_transfer
+                            notify_managers_of_draft_transfer(transfer, request.user)
+                        except Exception as e:
+                            # Don't break transfer creation if email fails
+                            logger.warning(f"Email notification failed for draft transfer: {e}")
+
                 return redirect('transfer_detail', transfer_id=transfer.id)
+
             except ValidationError as e:
                 messages.error(request, str(e))
                 log_user_activity(
                         request.user,
-                        'Transfer_creation_failed',
+                        'transfer_creation_failed',
                         {'error': str(e), 'form_data': form.cleaned_data},
                         request
                 )
@@ -74,7 +144,176 @@ def create_transfer(request):
     else:
         form = TransferForm()
 
-    return render(request, 'transfers/create_transfer.html', {'form': form})
+    # Get available commission configs for preview
+    commission_configs = CommissionConfig.objects.filter(active=True).order_by('currency', 'min_amount')
+
+    context = {
+        'form': form,
+        'commission_configs': commission_configs,
+    }
+
+    return render(request, 'transfers/create_transfer.html', context)
+
+
+@login_required
+@require_http_methods(["GET"])
+def check_promotable_transfers(request, config_id):
+    """
+    Check how many draft transfers can be promoted by a specific commission config.
+    Returns count without actually promoting anything.
+    """
+    if not request.user.is_manager():
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    commission_config = get_object_or_404(CommissionConfig, id=config_id, manager=request.user)
+
+    try:
+        # Find matching draft transfers
+        matching_transfers = Transfer.objects.filter(
+                status='DRAFT',
+                sent_currency=commission_config.currency,
+                amount__gte=commission_config.min_amount,
+                amount__lte=commission_config.max_amount
+        ).select_related('agent')
+
+        # Build response with transfer details for preview
+        transfer_details = []
+        for transfer in matching_transfers[:5]:  # Limit to first 5 for preview
+            transfer_details.append({
+                'reference_id': transfer.reference_id,
+                'amount': str(transfer.amount),
+                'beneficiary': transfer.beneficiary_name,
+                'agent': transfer.agent.username if transfer.agent else 'No agent',
+                'created_at': transfer.created_at.strftime('%d/%m/%Y %H:%M')
+            })
+
+        return JsonResponse({
+            'success': True,
+            'count': len(matching_transfers),
+            'transfers_preview': transfer_details,
+            'has_more': len(matching_transfers) > 5,
+            'config_details': {
+                'currency': commission_config.currency,
+                'min_amount': str(commission_config.min_amount),
+                'max_amount': str(commission_config.max_amount),
+                'commission_amount': str(commission_config.commission_amount)
+            }
+        })
+
+    except Exception as e:
+        return JsonResponse({'error': f'Check failed: {str(e)}'}, status=500)
+
+@login_required
+@require_http_methods(["POST"])
+def bulk_promote_by_config(request, config_id):
+    """
+    Manual bulk promotion endpoint for managers when auto-promotion fails.
+    """
+    if not request.user.is_manager():
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    commission_config = get_object_or_404(CommissionConfig, id=config_id, manager=request.user)
+
+    try:
+        results = bulk_promote_draft_transfers(commission_config, promoted_by_user=request.user)
+
+        if results['promoted']:
+            messages.success(
+                    request,
+                    f"Promu {len(results['promoted'])} transferts avec succès. "
+                    + (f"{len(results['failed'])} échecs." if results['failed'] else "")
+            )
+        else:
+            messages.info(request, "Aucun transfert à promouvoir trouvé.")
+
+        if results['failed']:
+            messages.warning(
+                    request,
+                    f"Échec de promotion pour {len(results['failed'])} transferts. Vérifiez les logs."
+            )
+
+        return JsonResponse({
+            'success': True,
+            'promoted_count': len(results['promoted']),
+            'failed_count': len(results['failed']),
+            'details': results
+        })
+
+    except Exception as e:
+        return JsonResponse({'error': f'Bulk promotion failed: {str(e)}'}, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def promote_draft_transfer(request, transfer_id):
+    """Promote transfer from DRAFT to PENDING"""
+    transfer = get_object_or_404(Transfer, id=transfer_id)
+
+    # Check permissions
+    if not transfer.can_be_promoted_by(request.user):
+        return JsonResponse({'error': 'Permission denied or transfer cannot be promoted'}, status=403)
+
+    try:
+        transfer.promote_to_pending(promoted_by=request.user)
+
+        log_user_activity(
+                request.user,
+                'transfer_promoted_to_pending',
+                {
+                    'transfer_id': transfer.id,
+                    'reference_id': transfer.reference_id,
+                    'from_status': 'DRAFT',
+                    'to_status': 'PENDING'
+                },
+                request
+        )
+
+        messages.success(request, f'Transfer {transfer.reference_id} promu en attente de validation.')
+
+        try:
+            from .services import notify_agent_of_manual_promotion
+            notify_agent_of_manual_promotion(transfer, request.user)
+        except Exception as e:
+            # Don't break the promotion if email fails
+            logger.warning(f"Email notification failed for manual promotion: {e}")
+
+        return JsonResponse({
+            'success': True,
+            'new_status': transfer.get_status_display(),
+            'message': f'Transfer {transfer.reference_id} promu avec succès'
+        })
+
+    except ValidationError as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+
+@login_required
+def draft_transfers(request):
+    """List draft transfers based on user permissions"""
+    if request.user.is_manager():
+        # Managers see all draft transfers
+        transfers = Transfer.objects.filter(status='DRAFT').select_related('agent').order_by('-created_at')
+        template_context = {
+            'is_manager_view': True,
+            'title': 'Tous les Transferts en Brouillon'
+        }
+    else:
+        # Agents see only their own draft transfers
+        transfers = Transfer.objects.filter(
+                status='DRAFT',
+                agent=request.user
+        ).select_related('agent').order_by('-created_at')
+        template_context = {
+            'is_manager_view': False,
+            'title': 'Mes Transferts en Brouillon'
+        }
+
+    context = {
+        'transfers': transfers,
+        **template_context
+    }
+
+    return render(request, 'transfers/draft_transfers.html', context)
 
 
 @login_required
@@ -83,7 +322,7 @@ def transfer_detail(request, transfer_id):
     transfer = get_object_or_404(Transfer, id=transfer_id)
 
     # Check permissions
-    if not (request.user.is_manager() or request.user.is_superuser) and transfer.agent != request.user:
+    if not request.user.is_manager() and transfer.agent != request.user:
         return HttpResponseForbidden("You can only view your own transfers")
 
     # Get commission info if exists
@@ -103,7 +342,7 @@ def transfer_detail(request, transfer_id):
 @require_http_methods(["POST"])
 def validate_transfer(request, transfer_id):
     """Validate transfer - managers and superusers only"""
-    if not (request.user.is_manager() or request.user.is_superuser):
+    if not request.user.is_manager():
         return JsonResponse({'error': 'Access denied'}, status=403)
 
     transfer = get_object_or_404(Transfer, id=transfer_id)
@@ -158,7 +397,7 @@ def validate_transfer(request, transfer_id):
 @require_http_methods(["POST"])
 def execute_transfer(request, transfer_id):
     """Execute transfer - managers and superusers only"""
-    if not (request.user.is_manager() or request.user.is_superuser):
+    if not request.user.is_manager():
         return JsonResponse({'error': 'Access denied'}, status=403)
 
     transfer = get_object_or_404(Transfer, id=transfer_id)
@@ -204,7 +443,7 @@ def execute_transfer(request, transfer_id):
 @login_required
 def pending_transfers(request):
     """List pending transfers for managers and superusers"""
-    if not (request.user.is_manager() or request.user.is_superuser):
+    if not request.user.is_manager():
         return HttpResponseForbidden("Access denied")
 
     transfers_pending = Transfer.objects.filter(status='PENDING').select_related('agent').order_by('-created_at')
@@ -219,7 +458,7 @@ def pending_transfers(request):
 @login_required
 def commission_config_list(request):
     """List commission configurations - managers and superusers only"""
-    if not (request.user.is_manager() or request.user.is_superuser):
+    if not request.user.is_manager():
         return HttpResponseForbidden("Access denied")
 
     configs = CommissionConfig.objects.filter(manager=request.user).order_by('currency', 'min_amount')
@@ -230,7 +469,7 @@ def commission_config_list(request):
 @login_required
 def create_commission_config(request):
     """Create commission configuration - managers and superusers only"""
-    if not (request.user.is_manager() or request.user.is_superuser):
+    if not request.user.is_manager():
         return HttpResponseForbidden("Access denied")
 
     if request.method == 'POST':
@@ -302,7 +541,7 @@ def create_commission_config(request):
 @require_http_methods(["POST"])
 def toggle_commission_config(request, config_id):
     """Toggle commission config active status - managers and superusers only"""
-    if not (request.user.is_manager() or request.user.is_superuser):
+    if not request.user.is_manager():
         return JsonResponse({'error': 'Access denied'}, status=403)
 
     config = get_object_or_404(CommissionConfig, id=config_id, manager=request.user)
@@ -332,7 +571,7 @@ def toggle_commission_config(request, config_id):
 @require_http_methods(["POST"])
 def update_commission_config(request, config_id):
     """Update commission config - managers and superusers only"""
-    if not (request.user.is_manager() or request.user.is_superuser):
+    if not request.user.is_manager():
         return JsonResponse({'error': 'Access denied'}, status=403)
 
     config = get_object_or_404(CommissionConfig, id=config_id, manager=request.user)
@@ -372,7 +611,7 @@ def update_commission_config(request, config_id):
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON data'}, status=400)
 
-
+@login_required
 def create_commission_for_transfer(transfer):
     """Helper function to create commission for a validated transfer"""
     # Find applicable commission config for the transfer currency and amount
@@ -471,7 +710,7 @@ def commissions_overview(request):
     period_label = period_label_map.get(period, 'mois')
 
     # agents only see their earnings
-    if not (user.is_manager() or user.is_superuser):
+    if not user.is_manager():
         commissions = (
             CommissionDistribution.objects
             .filter(agent=user)
@@ -540,7 +779,7 @@ def commissions_overview(request):
 @login_required
 def clear_commissions(request):
     """Update commission config - managers and superusers only"""
-    if not (request.user.is_manager() or request.user.is_superuser):
+    if not request.user.is_manager():
         return JsonResponse({'error': 'Access denied'}, status=403)
 
     agents = User.objects.filter()

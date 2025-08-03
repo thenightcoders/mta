@@ -23,4 +23,13 @@ urlpatterns = [
     # Earnings
     path('commissions/overview/', views.commissions_overview, name='commissions_overview'),
     path('commissions/clear/', views.clear_commissions, name='clear_commissions'),
+
+    # draft transfers
+    path('drafts/', views.draft_transfers, name='draft_transfers'),
+    path('<int:transfer_id>/promote/', views.promote_draft_transfer, name='promote_draft_transfer'),
+    # Check promotable transfers before showing modal
+    path('check-promotable-config/<int:config_id>/', views.check_promotable_transfers, name='check_promotable_transfers'),
+    # Manual bulk promotion for when auto-promotion fails
+    path('bulk-promote-config/<int:config_id>/', views.bulk_promote_by_config, name='bulk_promote_by_config'),
+
 ]
