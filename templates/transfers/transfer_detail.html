@@ -9,7 +9,7 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>
                 <i class="bi bi-arrow-left-right"></i> {% trans "Transfert" %} #{{ transfer.reference_id }}
-                <span class="badge bg-{% if transfer.status == 'PENDING' %}warning{% elif transfer.status == 'VALIDATED' %}info{% elif transfer.status == 'COMPLETED' %}success{% else %}danger{% endif %} ms-2">
+                <span class="badge bg-{% if transfer.status == 'DRAFT' %}secondary{% elif transfer.status == 'PENDING' %}warning{% elif transfer.status == 'VALIDATED' %}info{% elif transfer.status == 'COMPLETED' %}success{% else %}danger{% endif %}">
                     {{ transfer.get_status_display }}
                 </span>
             </h1>
@@ -170,10 +170,27 @@
                 <p><strong>{% trans "Créé" %}:</strong> {{ transfer.created_at|date:"d F Y H:i" }}</p>
                 <p><strong>{% trans "Mis à jour" %}:</strong> {{ transfer.updated_at|date:"d F Y H:i" }}</p>
                 <p><strong>{% trans "Statut" %}:</strong>
-                    <span class="badge bg-{% if transfer.status == 'PENDING' %}warning{% elif transfer.status == 'VALIDATED' %}info{% elif transfer.status == 'COMPLETED' %}success{% else %}danger{% endif %}">
+                    <span class="badge bg-{% if transfer.status == 'DRAFT' %}secondary{% elif transfer.status == 'PENDING' %}warning{% elif transfer.status == 'VALIDATED' %}info{% elif transfer.status == 'COMPLETED' %}success{% else %}danger{% endif %}">
                         {{ transfer.get_status_display }}
                     </span>
                 </p>
+                {% if transfer.status == 'DRAFT' %}
+                    {% if user.is_manager or user.is_superuser or transfer.agent == user %}
+                        <div class="mb-3">
+                            <p class="text-muted small">{% trans "Transfert en Brouillon" %} - {% trans "Configuration commission manquante" %}</p>
+                            <button type="button" class="btn btn-success w-100" onclick="promoteTransferToPending({{ transfer.id }}, '{{ transfer.reference_id }}')">
+                                <i class="bi bi-arrow-up-circle"></i> {% trans "Promouvoir vers En Attente" %}
+                            </button>
+                        </div>
+                    {% else %}
+                        <div class="mb-3">
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                {% trans "Ce transfert est en brouillon car aucune configuration de commission ne correspond. Les managers ont été notifiés." %}
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endif %}
             </div>
         </div>
     </div>
@@ -364,6 +381,72 @@ function submitExecution() {
     .catch(error => {
         console.error('Execution error:', error);
         alert('{% trans "Erreur" %}: ' + error);
+    });
+}
+
+function promoteTransferToPending(transferId, referenceId) {
+    // Get the button element
+    const btn = document.querySelector(`button[onclick*="promoteTransferToPending(${transferId}"]`);
+    if (!btn) return;
+
+    const originalText = btn.innerHTML;
+
+    // Show loading state
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>{% trans "Promotion..." %}';
+
+    // Make AJAX call to promote transfer
+    fetch(`{% url 'promote_draft_transfer' 0 %}`.replace('0', transferId), {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Success - show message and update UI
+            showAlert('success', `Transfer ${referenceId} promu avec succès vers "En Attente".`);
+
+            // Update the status badge on the page
+            const statusBadge = document.querySelector('.badge');
+            if (statusBadge) {
+                statusBadge.className = 'badge bg-warning'; // PENDING status styling
+                statusBadge.textContent = 'En attente';
+            }
+
+            // Remove the promotion section entirely since it's no longer DRAFT
+            const promotionSection = btn.closest('.mb-3');
+            if (promotionSection) {
+                promotionSection.style.transition = 'opacity 0.3s ease';
+                promotionSection.style.opacity = '0';
+                setTimeout(() => {
+                    promotionSection.remove();
+                }, 300);
+            }
+
+            // Optionally reload the page after a short delay to reflect all changes
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+
+        } else {
+            // Error from server
+            showAlert('danger', data.error || 'Erreur lors de la promotion du transfert.');
+
+            // Reset button state
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('danger', 'Erreur de connexion. Veuillez réessayer.');
+
+        // Reset button state
+        btn.disabled = false;
+        btn.innerHTML = originalText;
     });
 }
 </script>

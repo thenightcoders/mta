@@ -41,13 +41,13 @@
                                 {% for config in configs %}
                                 <tr>
                                     <td>
-                                        <span class="badge bg-primary">{{ config.currency }}</span>
+                                        <span class="badge {% if config.currency == "EUR" %}bg-primary{% elif config.currency == "USD" %}bg-info{% else %}bg-success{% endif %}">{{ config.currency }}</span>
                                     </td>
                                     <td>
                                         {{ config.min_amount|floatformat:2 }} - {{ config.max_amount|floatformat:2 }} {{ config.currency }}
                                     </td>
                                     <td>
-                                        <strong>{{ config.commission_amount|floatformat:4 }} {{ config.currency }}</strong>
+                                        <strong>{{ config.commission_amount|floatformat:2 }} {{ config.currency }}</strong>
                                     </td>
                                     <td>
                                         <span class="text-success">{{ config.agent_share|floatformat:2 }}%</span>
@@ -61,12 +61,28 @@
                                         </span>
                                     </td>
                                     <td>
-                                        <button class="btn btn-sm btn-outline-primary me-1" onclick="editConfig({{ config.id }}, '{{ config.currency }}', '{{ config.min_amount }}', '{{ config.max_amount }}', '{{ config.commission_amount }}', '{{ config.agent_share }}', {{ config.active|yesno:'true,false' }})">
-                                            <i class="bi bi-pencil"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-{% if config.active %}danger{% else %}success{% endif %}" onclick="toggleConfig({{ config.id }}, {{ config.active|yesno:'true,false' }})">
-                                            {% if config.active %}{% trans "Désactiver" %}{% else %}{% trans "Activer" %}{% endif %}
-                                        </button>
+                                        <div class="btn-group" role="group">
+                                            <!-- Edit config button -->
+                                            <button class="btn btn-sm btn-outline-primary me-1"
+                                                    onclick="editConfig({{ config.id }}, '{{ config.currency }}', '{{ config.min_amount }}', '{{ config.max_amount }}', '{{ config.commission_amount }}', '{{ config.agent_share }}', {{ config.active|yesno:'true,false' }})">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+
+                                            <!-- Toggle active/inactive -->
+                                            <button class="btn btn-sm btn-{% if config.active %}danger{% else %}success{% endif %}"
+                                                    onclick="toggleConfig({{ config.id }}, {{ config.active|yesno:'true,false' }})">
+                                                {% if config.active %}{% trans "Désactiver" %}{% else %}{% trans "Activer" %}{% endif %}
+                                            </button>
+
+                                            <!-- BULK PROMOTION BUTTON - Only if config is active -->
+                                            {% if config.active %}
+                                            <button class="btn btn-sm btn-outline-success"
+                                                    onclick="bulkPromoteConfig({{ config.id }}, '{{ config.currency }}', '{{ config.min_amount }}', '{{ config.max_amount }}')"
+                                                    title="{% trans 'Promouvoir tous les transferts en brouillon correspondants' %}">
+                                                <i class="bi bi-arrow-up-circle"></i> <span class="d-none d-md-inline">{% trans "Bulk" %}</span>
+                                            </button>
+                                            {% endif %}
+                                        </div>
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -201,6 +217,33 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Annuler" %}</button>
                 <button type="button" class="btn btn-primary" onclick="saveConfig()">{% trans "Sauvegarder Modifications" %}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="bulkPromoteModal" tabindex="-1" aria-labelledby="bulkPromoteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="bulkPromoteModalLabel">{% trans "Promotion en Lot" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>{% trans "Êtes-vous sûr de vouloir promouvoir tous les transferts en brouillon correspondants ?" %}</p>
+                <div class="alert alert-info">
+                    <small>
+                        <i class="bi bi-info-circle"></i>
+                        {% trans "Cette action trouvera tous les transferts en brouillon qui correspondent à cette configuration de commission et les promouvra automatiquement vers 'En Attente'." %}
+                    </small>
+                </div>
+                <div id="bulkPromoteDetails"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Annuler" %}</button>
+                <button type="button" class="btn btn-success" id="confirmBulkPromoteBtn">
+                    <i class="bi bi-arrow-up-circle"></i> {% trans "Promouvoir en Lot" %}
+                </button>
             </div>
         </div>
     </div>
@@ -380,8 +423,122 @@ function calculateCommission() {
     }
 }
 
-// Calculate on page load
+// Calculate on a page load
 calculateCommission();
 {% endif %}
+function bulkPromoteConfig(configId, currency, minAmount, maxAmount) {
+    // First, check if there are transfers to promote
+    fetch(`{% url 'check_promotable_transfers' 0 %}`.replace('0', configId), {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (data.count === 0) {
+                // No transfers to promote - show message instead of modal
+                showAlert('info', `Aucun transfert en brouillon trouvé pour ${currency} [${minAmount} - ${maxAmount}]`);
+                return;
+            }
+
+            // Transfers found - show modal with details
+            showBulkPromoteModal(configId, data);
+
+        } else {
+            showAlert('danger', data.error || 'Erreur lors de la vérification des transferts.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('danger', 'Erreur de connexion lors de la vérification.');
+    });
+}
+
+function showBulkPromoteModal(configId, checkData) {
+    const modal = new bootstrap.Modal(document.getElementById('bulkPromoteModal'));
+    const config = checkData.config_details;
+
+    // Build transfer preview list
+    let transfersPreview = '';
+    if (checkData.transfers_preview.length > 0) {
+        transfersPreview = '<div class="mt-2"><small class="text-muted">Aperçu des transferts :</small><ul class="list-unstyled small">';
+        checkData.transfers_preview.forEach(transfer => {
+            transfersPreview += `<li><strong>${transfer.reference_id}</strong> - ${transfer.amount} ${config.currency} - ${transfer.beneficiary} (${transfer.agent})</li>`;
+        });
+        transfersPreview += '</ul>';
+
+        if (checkData.has_more) {
+            transfersPreview += `<small class="text-muted">... et ${checkData.count - checkData.transfers_preview.length} autre(s)</small>`;
+        }
+        transfersPreview += '</div>';
+    }
+
+    // Update modal content
+    document.getElementById('bulkPromoteDetails').innerHTML = `
+        <div class="alert alert-success">
+            <h6 class="mb-2"><i class="bi bi-check-circle"></i> ${checkData.count} transfert(s) trouvé(s)</h6>
+            <strong>Configuration :</strong> ${config.currency} [${config.min_amount} - ${config.max_amount}]<br>
+            <strong>Commission :</strong> ${config.commission_amount} ${config.currency}
+        </div>
+        ${transfersPreview}
+        <div class="alert alert-info mt-2">
+            <small><i class="bi bi-info-circle"></i> Ces transferts seront promus vers le statut "En Attente" et pourront ensuite être validés.</small>
+        </div>
+    `;
+
+    // Set up confirmation button
+    document.getElementById('confirmBulkPromoteBtn').onclick = function() {
+        performBulkPromotion(configId);
+    };
+
+    modal.show();
+}
+
+// Enhanced performBulkPromotion with better feedback
+function performBulkPromotion(configId) {
+    const btn = document.getElementById('confirmBulkPromoteBtn');
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Promotion en cours...';
+
+    fetch(`{% url 'bulk_promote_by_config' 0 %}`.replace('0', configId), {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            let message = `${data.promoted_count} transfert(s) promu(s) avec succès!`;
+            if (data.failed_count > 0) {
+                message += ` ${data.failed_count} échec(s).`;
+            }
+            showAlert('success', message);
+
+            // Close modal
+            bootstrap.Modal.getInstance(document.getElementById('bulkPromoteModal')).hide();
+
+            // Optional: Refresh page to show updated data
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+        } else {
+            showAlert('danger', data.error || 'Erreur lors de la promotion en lot.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('danger', 'Erreur de connexion. Veuillez réessayer.');
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    });
+}
 </script>
 {% endblock %}

@@ -110,9 +110,12 @@
                                     <td>{{ transfer.agent.username }}</td>
                                     {% endif %}
                                     <td>
-                                        <span class="badge bg-{% if transfer.status == 'PENDING' %}warning{% elif transfer.status == 'VALIDATED' %}info{% elif transfer.status == 'COMPLETED' %}success{% else %}danger{% endif %}">
+                                        <span class="badge bg-{% if transfer.status == 'DRAFT' %}secondary{% elif transfer.status == 'PENDING' %}warning{% elif transfer.status == 'VALIDATED' %}info{% elif transfer.status == 'COMPLETED' %}success{% else %}danger{% endif %}">
                                             {{ transfer.get_status_display }}
                                         </span>
+                                        {% if transfer.status == 'DRAFT' %}
+                                        <br><small class="text-muted">{% trans "Config commission manquante" %}</small>
+                                        {% endif %}
                                     </td>
                                     <td class="text-muted">{{ transfer.created_at|date:"d M Y H:i" }}</td>
                                     <td>
