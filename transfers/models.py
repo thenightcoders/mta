@@ -158,11 +158,52 @@ class Transfer(models.Model):
         if not self.has_commission_config_available():
             raise ValidationError(_("No commission configuration available for this transfer"))
 
+        # Get the commission config for this transfer
+        commission_config = CommissionConfig.objects.filter(
+                currency=self.sent_currency,
+                min_amount__lte=self.amount,
+                max_amount__gte=self.amount,
+                active=True
+        ).first()
+
+        if not commission_config:
+            raise ValidationError(_("No commission configuration available for this transfer"))
+
+        # Promote to PENDING
         self.status = 'PENDING'
-        if promoted_by:
-            self.agent = promoted_by
+
+        # Set the manager who will validate this transfer (based on commission config)
+        # This ensures the commission calculation will work correctly later
+        if not promoted_by and commission_config:
+            # For auto-promotion, we need to set which manager this transfer will be assigned to
+            # Use the manager who created the commission config
+            pass  # Don't set validated_by yet, that happens during actual validation
+
         self.save()
-        return True
+
+        # IMPORTANT: Create commission distribution immediately when promoting to PENDING
+        # This ensures auto-promoted transfers have commissions like manually created ones
+        self._create_commission_distribution(commission_config)
+
+    def _create_commission_distribution(self, commission_config):
+        """
+        Private method to create commission distribution for this transfer.
+        Called during promotion to 'PENDING' to ensure commissions are set up.
+        """
+        # Avoid creating duplicate commissions
+        if hasattr(self, 'commission') and self.commission:
+            return
+
+        # Calculate commission using the same logic as validation
+        commission_data = CommissionDistribution.calculate_commission(self, commission_config)
+
+        if commission_data:
+            CommissionDistribution.objects.create(
+                    transfer=self,
+                    agent=self.agent,
+                    config_used=commission_config,
+                    **commission_data
+            )
 
     def get_commission_rate(self):
         """Get the applicable commission rate for this transfer"""
