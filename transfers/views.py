@@ -631,12 +631,17 @@ def create_commission_for_transfer(transfer):
         commission_data = CommissionDistribution.calculate_commission(transfer, config)
 
         if commission_data:
-            CommissionDistribution.objects.create(
+            obj, created = CommissionDistribution.objects.get_or_create(
                     transfer=transfer,
                     agent=transfer.agent,
                     config_used=config,
-                    **commission_data
+                    defaults=commission_data
             )
+
+            if created:
+                logger.warning("New CommissionDistribution created.")
+            else:
+                logger.warning("Existing CommissionDistribution retrieved.")
             return True
     return False
 
