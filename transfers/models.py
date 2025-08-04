@@ -156,7 +156,7 @@ class Transfer(models.Model):
             raise ValidationError(f"Cannot promote transfer with status {self.status}")
 
         if not self.has_commission_config_available():
-            raise ValidationError(_("No commission configuration available for this transfer"))
+            raise ValidationError(_("Aucune configration de commission dispo pour ce transfert"))
 
         # Get the commission config for this transfer
         commission_config = CommissionConfig.objects.filter(
@@ -167,7 +167,7 @@ class Transfer(models.Model):
         ).first()
 
         if not commission_config:
-            raise ValidationError(_("No commission configuration available for this transfer"))
+            raise ValidationError(_("Aucune configration de commission dispo pour ce transfert"))
 
         # Promote to PENDING
         self.status = 'PENDING'
