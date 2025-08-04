@@ -216,169 +216,44 @@
 {% block extra_js %}
 <script>
 function updateCommissionPreview() {
-    // Get form field values
-    const commissionAmount = parseFloat(document.getElementById('id_commission_amount').value) || 0;
-    const agentShare = parseFloat(document.getElementById('id_agent_share').value) || 0;
-    const currency = document.getElementById('id_currency').value || '';
+    try {
+        const commissionAmountInput = document.getElementById('id_commission_amount');
+        const agentShareInput = document.getElementById('id_agent_share');
+        const currencyInput = document.getElementById('id_currency');
+        const totalCommissionElement = document.getElementById('totalCommission');
+        const agentAmountElement = document.getElementById('agentAmount');
+        const managerAmountElement = document.getElementById('managerAmount');
+        const managerPercentElement = document.getElementById('managerPercent');
 
-    // Calculate commission distribution
-    const totalCommission = commissionAmount;
-    const agentAmount = (totalCommission * agentShare) / 100;
-    const managerAmount = totalCommission - agentAmount;
-    const managerPercent = 100 - agentShare;
-
-    // Update the preview display
-    document.getElementById('totalCommission').textContent =
-        totalCommission > 0 ? `${totalCommission.toFixed(2)} ${currency}` : '-';
-    document.getElementById('agentAmount').textContent =
-        agentAmount > 0 ? `${agentAmount.toFixed(2)} ${currency}` : '-';
-    document.getElementById('managerAmount').textContent =
-        managerAmount > 0 ? `${managerAmount.toFixed(2)} ${currency}` : '-';
-    document.getElementById('managerPercent').textContent =
-        managerPercent >= 0 ? `${managerPercent.toFixed(1)}%` : '-';
-}
-
-
-document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('commission-form');
-    const submitBtn = document.getElementById('submit-btn');
-    const spinner = submitBtn.querySelector('.spinner-border');
-
-    // Event listeners for live preview
-    const commissionAmountInput = document.getElementById('id_commission_amount');
-    const agentShareInput = document.getElementById('id_agent_share');
-    const currencyInput = document.getElementById('id_currency');
-
-    if (commissionAmountInput) commissionAmountInput.addEventListener('input', updateCommissionPreview);
-    if (agentShareInput) agentShareInput.addEventListener('input', updateCommissionPreview);
-    if (currencyInput) currencyInput.addEventListener('change', updateCommissionPreview);
-
-    // Initial calculation when page loads
-    updateCommissionPreview();
-
-    // Live preview updates
-    commissionAmountInput.addEventListener('input', updateCommissionPreview);
-    agentShareInput.addEventListener('input', updateCommissionPreview);
-    currencyInput.addEventListener('change', updateCommissionPreview);
-
-    // Form validation
-    form.addEventListener('submit', (e) => {
-        const requiredFields = ['currency', 'min_amount', 'max_amount', 'commission_amount', 'agent_share'];
-        let isValid = true;
-
-        requiredFields.forEach(fieldName => {
-            const input = form.querySelector(`[name="${fieldName}"]`);
-            const errorDiv = input.nextElementSibling?.classList.contains('text-danger')
-                ? input.nextElementSibling
-                : null;
-
-            if (errorDiv) {
-                errorDiv.remove();
-            }
-
-            if (!input.value.trim()) {
-                isValid = false;
-                const error = document.createElement('div');
-                error.className = 'text-danger small mt-1';
-                error.textContent = '{% trans "Ce champ est requis" %}';
-                input.classList.add('is-invalid');
-                input.parentNode.appendChild(error);
-            } else {
-                input.classList.remove('is-invalid');
-                input.classList.add('is-valid');
-            }
-
-            // Validate numeric fields
-            if (['min_amount', 'max_amount', 'commission_amount', 'agent_share'].includes(fieldName) && input.value.trim()) {
-                const value = parseFloat(input.value);
-                if (value < 0) {
-                    isValid = false;
-                    const error = document.createElement('div');
-                    error.className = 'text-danger small mt-1';
-                    error.textContent = '{% trans "La valeur doit être positive" %}';
-                    input.classList.add('is-invalid');
-                    input.classList.remove('is-valid');
-                    input.parentNode.appendChild(error);
-                }
-
-                if (fieldName === 'commission_amount' && value < 0.01) {
-                    isValid = false;
-                    const error = document.createElement('div');
-                    error.className = 'text-danger small mt-1';
-                    error.textContent = '{% trans "La commission doit être d\'au moins 0.01" %}';
-                    input.classList.add('is-invalid');
-                    input.classList.remove('is-valid');
-                    input.parentNode.appendChild(error);
-                }
-
-                if (fieldName === 'agent_share' && value > 100) {
-                    isValid = false;
-                    const error = document.createElement('div');
-                    error.className = 'text-danger small mt-1';
-                    error.textContent = '{% trans "La part agent ne peut pas dépasser 100%" %}';
-                    input.classList.add('is-invalid');
-                    input.classList.remove('is-valid');
-                    input.parentNode.appendChild(error);
-                }
-            }
-        });
-
-        // Validate min < max
-        const minAmount = parseFloat(form.querySelector('[name="min_amount"]').value);
-        const maxAmount = parseFloat(form.querySelector('[name="max_amount"]').value);
-        if (minAmount && maxAmount && minAmount >= maxAmount) {
-            isValid = false;
-            const maxInput = form.querySelector('[name="max_amount"]');
-            const error = document.createElement('div');
-            error.className = 'text-danger small mt-1';
-            error.textContent = '{% trans "Le montant maximum doit être supérieur au minimum" %}';
-            maxInput.classList.add('is-invalid');
-            maxInput.parentNode.appendChild(error);
-        }
-
-        if (!isValid) {
-            e.preventDefault();
+        if (!commissionAmountInput || !agentShareInput || !currencyInput || !totalCommissionElement || !agentAmountElement || !managerAmountElement || !managerPercentElement) {
+            console.error('One or more required elements not found');
             return;
         }
 
-        // Show loading state
-        submitBtn.disabled = true;
-        spinner.classList.remove('d-none');
+        const commissionAmount = parseFloat(commissionAmountInput.value) || 0;
+        const agentShare = parseFloat(agentShareInput.value) || 0;
+        const currency = currencyInput.options[currencyInput.selectedIndex].text || '';
+
+        const totalCommission = commissionAmount;
+        const agentAmount = (totalCommission * agentShare) / 100;
+        const managerAmount = totalCommission - agentAmount;
+        const managerPercent = 100 - agentShare;
+
+        totalCommissionElement.textContent = totalCommission > 0 ? `${totalCommission.toFixed(2)} ${currency}` : '-';
+        agentAmountElement.textContent = agentAmount > 0 ? `${agentAmount.toFixed(2)} ${currency}` : '-';
+        managerAmountElement.textContent = managerAmount > 0 ? `${managerAmount.toFixed(2)} ${currency}` : '-';
+        managerPercentElement.textContent = managerPercent >= 0 ? `${managerPercent.toFixed(1)}%` : '-';
+    } catch (error) {
+        console.error('Error in updateCommissionPreview:', error);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const inputs = document.querySelectorAll('#id_commission_amount, #id_agent_share, #id_currency');
+    inputs.forEach(input => {
+        input.addEventListener('input', updateCommissionPreview);
+        input.addEventListener('change', updateCommissionPreview);
     });
-
-    // Real-time validation
-    form.querySelectorAll('input, select').forEach(input => {
-        input.addEventListener('input', () => {
-            const errorDiv = input.nextElementSibling?.classList.contains('text-danger')
-                ? input.nextElementSibling
-                : null;
-
-            if (errorDiv) {
-                errorDiv.remove();
-            }
-
-            if (input.value.trim()) {
-                if (input.type === 'number') {
-                    const value = parseFloat(input.value);
-                    if (value >= 0) {
-                        input.classList.add('is-valid');
-                        input.classList.remove('is-invalid');
-                    } else {
-                        input.classList.add('is-invalid');
-                        input.classList.remove('is-valid');
-                    }
-                } else {
-                    input.classList.add('is-valid');
-                    input.classList.remove('is-invalid');
-                }
-            } else if (input.required) {
-                input.classList.add('is-invalid');
-                input.classList.remove('is-valid');
-            }
-        });
-    });
-
-    // Initial calculation
     updateCommissionPreview();
 });
 </script>
