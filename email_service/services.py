@@ -84,7 +84,7 @@ def send_password_setup_email(user_id: int, base_url: str) -> bool:
         # Send email (async if available, sync otherwise)
         if should_use_async_email():
             async_task(
-                    'email.tasks.send_template_email_task',
+                    'email_service.tasks.send_template_email_task',
                     recipient_list=[user.email],
                     subject=subject,
                     template_path=template_path,
@@ -157,101 +157,111 @@ def send_user_notification_email(user_id: int, notification_type: str,
                 'subject_key': 'account_activated_subject',
                 'template': 'account_activated',
                 'fallback_message': _(
-                        "Hello {name},\n\n"
-                        "Your account has been activated! You can now log in to {site_name}.\n\n"
-                        "If you have any questions, contact us at {support_email}.\n\n"
-                        "Best regards,\n{site_name} Team"
+                        "Bonjour {name},\n\n"
+                        "Votre compte a été activé ! Vous pouvez maintenant vous connecter à {site_name}.\n\n"
+                        "Si vous avez des questions, contactez-nous à {support_email}.\n\n"
+                        "Cordialement,\nÉquipe {site_name}"
                 )
             },
             'account_deactivated': {
                 'subject_key': 'account_deactivated_subject',
                 'template': 'account_deactivated',
                 'fallback_message': _(
-                        "Hello {name},\n\n"
-                        "Your account has been deactivated. If you believe this is an error, "
-                        "please contact us at {support_email}.\n\n"
-                        "Best regards,\n{site_name} Team"
+                        "Bonjour {name},\n\n"
+                        "Votre compte a été désactivé. Si vous pensez qu'il s'agit d'une erreur, "
+                        "veuillez nous contacter à {support_email}.\n\n"
+                        "Cordialement,\nÉquipe {site_name}"
                 )
             },
             'profile_updated': {
                 'subject_key': 'profile_updated_subject',
                 'template': 'profile_updated',
                 'fallback_message': _(
-                        "Hello {name},\n\n"
-                        "Your profile has been updated successfully.\n\n"
-                        "If you didn't make these changes, please contact us immediately at {support_email}.\n\n"
-                        "Best regards,\n{site_name} Team"
+                        "Bonjour {name},\n\n"
+                        "Votre profil a été mis à jour avec succès.\n\n"
+                        "Si vous n'avez pas effectué ces modifications, veuillez nous contacter immédiatement à {support_email}.\n\n"
+                        "Cordialement,\nÉquipe {site_name}"
                 )
             },
             'password_changed': {
                 'subject_key': 'password_changed_subject',
                 'template': 'password_changed',
                 'fallback_message': _(
-                        "Hello {name},\n\n"
-                        "Your password has been changed successfully.\n\n"
-                        "If you didn't make this change, please contact us immediately at {support_email}.\n\n"
-                        "Best regards,\n{site_name} Team"
+                        "Bonjour {name},\n\n"
+                        "Votre mot de passe a été modifié avec succès.\n\n"
+                        "Si vous n'avez pas effectué cette modification, veuillez nous contacter immédiatement à {support_email}.\n\n"
+                        "Cordialement,\nÉquipe {site_name}"
                 )
             },
             'transfer_status_change': {
                 'subject_key': 'transfer_status_subject',
                 'template': 'transfer_status_change',
                 'fallback_message': _(
-                        "Hello {name},\n\n"
-                        "Your transfer status has been updated.\n\n"
-                        "Transfer Details:\n"
-                        "Reference: {transfer_reference}\n"
-                        "Status: {transfer_status}\n\n"
-                        "Best regards,\n{site_name} Team"
+                        "Bonjour {name},\n\n"
+                        "Le statut de votre transfert a été mis à jour.\n\n"
+                        "Détails du transfert :\n"
+                        "Référence : {transfer_reference}\n"
+                        "Statut : {transfer_status}\n\n"
+                        "Cordialement,\nÉquipe {site_name}"
                 )
             },
             'draft_transfer_created': {
                 'subject_key': 'draft_transfer_subject',
                 'template': 'draft_transfer_notification',
                 'fallback_message': _(
-                        "Hello {name},\n\n"
-                        "A new draft transfer requires your attention:\n\n"
-                        "Reference: {transfer_reference}\n"
-                        "Amount: {transfer_amount} {transfer_currency}\n"
-                        "Beneficiary: {beneficiary_name}\n"
-                        "Agent: {agent_name}\n"
-                        "Created: {created_at}\n\n"
-                        "No commission configuration matches this amount ({missing_range}). "
-                        "Please configure appropriate commissions to enable automatic processing.\n\n"
-                        "Log in to the platform to configure commissions.\n\n"
-                        "Best regards,\n{site_name} Team"
+                        "Bonjour {name},\n\n"
+                        "Un nouveau transfert en brouillon nécessite votre attention :\n\n"
+                        "Référence : {transfer_reference}\n"
+                        "Montant : {transfer_amount} {transfer_currency}\n"
+                        "Bénéficiaire : {beneficiary_name}\n"
+                        "Agent : {agent_name}\n"
+                        "Créé le : {created_at}\n\n"
+                        "Aucune configuration de commission ne correspond à ce montant ({missing_range}). "
+                        "Veuillez configurer les commissions appropriées pour permettre le traitement automatique.\n\n"
+                        "Connectez-vous à la plateforme pour configurer les commissions.\n\n"
+                        "Cordialement,\nÉquipe {site_name}"
                 )
             },
-
             'transfers_auto_promoted': {
                 'subject_key': 'auto_promotion_subject',
                 'template': 'auto_promotion_notification',
                 'fallback_message': _(
-                        "Hello {name},\n\n"
-                        "Great news! {promoted_count} of your draft transfers have been automatically "
-                        "promoted to 'Pending' thanks to a new commission configuration.\n\n"
-                        "Configuration: {config_currency} [{config_range}] - Commission: {commission_amount}\n"
-                        "Configured by: {manager_name}\n\n"
-                        "Your transfers are now pending validation by a manager.\n\n"
-                        "Log in to see the updated status.\n\n"
-                        "Best regards,\n{site_name} Team"
+                        "Bonjour {name},\n\n"
+                        "Excellente nouvelle ! {promoted_count} de vos transferts en brouillon ont été automatiquement "
+                        "promus vers 'En Attente' grâce à une nouvelle configuration de commission.\n\n"
+                        "Configuration : {config_currency} [{config_range}] - Commission : {commission_amount}\n"
+                        "Configuré par : {manager_name}\n\n"
+                        "Vos transferts sont maintenant en attente de validation par un manager.\n\n"
+                        "Connectez-vous pour voir le statut mis à jour.\n\n"
+                        "Cordialement,\nÉquipe {site_name}"
                 )
             },
-
             'transfer_manually_promoted': {
                 'subject_key': 'manual_promotion_subject',
                 'template': 'manual_promotion_notification',
                 'fallback_message': _(
-                        "Hello {name},\n\n"
-                        "Your draft transfer has been manually promoted to 'Pending':\n\n"
-                        "Reference: {transfer_reference}\n"
-                        "Amount: {transfer_amount} {transfer_currency}\n"
-                        "Beneficiary: {beneficiary_name}\n"
-                        "Promoted by: {promoted_by_name} ({promoted_by_role})\n\n"
-                        "Your transfer is now pending validation.\n\n"
-                        "Best regards,\n{site_name} Team"
+                        "Bonjour {name},\n\n"
+                        "Votre transfert en brouillon a été manuellement promu vers 'En Attente' :\n\n"
+                        "Référence : {transfer_reference}\n"
+                        "Montant : {transfer_amount} {transfer_currency}\n"
+                        "Bénéficiaire : {beneficiary_name}\n"
+                        "Promu par : {promoted_by_name} ({promoted_by_role})\n\n"
+                        "Votre transfert est maintenant en attente de validation.\n\n"
+                        "Cordialement,\nÉquipe {site_name}"
                 )
             }
+        }
+
+        # Create an email subject based on the notification type
+        subject_templates = {
+            'account_activated_subject': _("Compte Activé - {site_name}"),
+            'account_deactivated_subject': _("Compte Désactivé - {site_name}"),
+            'profile_updated_subject': _("Profil Mis à Jour - {site_name}"),
+            'password_changed_subject': _("Mot de Passe Modifié - {site_name}"),
+            'transfer_status_subject': _("Mise à Jour Transfert - {site_name}"),
+            'draft_transfer_subject': _("Action Requise: Transfert en Brouillon - {site_name}"),
+            'auto_promotion_subject': _("Transferts Promus Automatiquement - {site_name}"),
+            'manual_promotion_subject': _("Transfert Promu - {site_name}")
         }
 
         if notification_type not in notification_configs:
@@ -259,15 +269,6 @@ def send_user_notification_email(user_id: int, notification_type: str,
             return False
 
         config = notification_configs[notification_type]
-
-        # Create subject based on notification type
-        subject_templates = {
-            'account_activated_subject': _("Account Activated - {site_name}"),
-            'account_deactivated_subject': _("Account Deactivated - {site_name}"),
-            'profile_updated_subject': _("Profile Updated - {site_name}"),
-            'password_changed_subject': _("Password Changed - {site_name}"),
-            'transfer_status_subject': _("Transfer Update - {site_name}"),
-        }
 
         subject = subject_templates[config['subject_key']].format(
                 site_name=email_context['site_name_formal']
@@ -279,15 +280,13 @@ def send_user_notification_email(user_id: int, notification_type: str,
         # Create a fallback message
         fallback_message = config['fallback_message'].format(
                 name=user.get_full_name() or user.username,
-                site_name=email_context['site_name_formal'],
-                support_email=email_context['support_email'],
                 **email_context
         )
 
         # Send email
         if should_use_async_email():
             async_task(
-                    'email.tasks.send_template_email_task',
+                    'email_service.tasks.send_template_email_task',
                     recipient_list=[user.email],
                     subject=subject,
                     template_path=template_path,
@@ -359,7 +358,7 @@ def send_admin_notification(subject: str, message: str, notification_type: str =
         # Send notification
         if should_use_async_email():
             async_task(
-                    'email.tasks.send_admin_notification_task',
+                    'email_service.tasks.send_admin_notification_task',
                     subject=subject,
                     message=message,
                     notification_type=notification_type,
@@ -586,7 +585,10 @@ def notify_managers_of_draft_transfer(transfer_id: int, agent_id: int) -> Dict[s
             return {'success': 0, 'failed': 0, 'total': 0, 'errors': [str(e)]}
 
         # Get all active managers
-        managers = User.objects.filter(user_type='MANAGER', is_active=True).exclude(email='')
+        managers = User.objects.filter(user_type='manager', is_active=True).exclude(email='')
+        print(f"Found {managers.count()} active managers to notify about draft transfer")
+        managerrs = User.objects.all()
+        print(f"List of all users: {managerrs}")
 
         if not managers.exists():
             logger.warning("No active managers found to notify about draft transfer")
