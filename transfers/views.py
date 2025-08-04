@@ -123,6 +123,7 @@ def create_transfer(request):
                         )
 
                         try:
+                            logger.warning("Calling notify_managers_of_draft_transfer")
                             from .services import notify_managers_of_draft_transfer
                             notify_managers_of_draft_transfer(transfer, request.user)
                         except Exception as e:
