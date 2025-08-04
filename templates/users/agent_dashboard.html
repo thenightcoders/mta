@@ -210,7 +210,7 @@
                     {% for commission in recent_commissions %}
                     <div class="d-flex justify-content-between align-items-center py-2 {% if not forloop.last %}border-bottom{% endif %}">
                         <div>
-                            <div class="fw-bold">{% trans "Transfert" %} #{{ commission.transfer.id }}</div>
+                            <div class="fw-bold">{% trans "Transfert" %} #{{ commission.transfer.reference_id }}</div>
                             <small class="text-muted">{{ commission.created_at|date:"d M Y" }}</small>
                         </div>
                         <div class="text-end">
