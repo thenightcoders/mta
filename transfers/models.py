@@ -153,7 +153,11 @@ class Transfer(models.Model):
     def promote_to_pending(self, promoted_by=None):
         """Promote transfer from DRAFT to PENDING if commission config available"""
         if self.status != 'DRAFT':
-            raise ValidationError(f"Cannot promote transfer with status {self.status}")
+            raise ValidationError(
+                    _("Impossible de promouvoir le transfert avec le statut {status}").format(
+                            status=self.get_status_display()
+                    )
+            )
 
         if not self.has_commission_config_available():
             raise ValidationError(_("Aucune configration de commission dispo pour ce transfert"))

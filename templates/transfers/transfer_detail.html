@@ -445,7 +445,16 @@ function promoteTransferToPending(transferId, referenceId) {
 
         } else {
             // Error from server
-            showAlert('danger', data.error || 'Erreur lors de la promotion du transfert.');
+            let errorMessage = data.error || 'Erreur lors de la promotion du transfert.';
+            // Handle Django ValidationError list format
+            if (Array.isArray(errorMessage)) {
+                errorMessage = errorMessage[0]; // Get the first error message
+            } else if (typeof errorMessage === 'object' && errorMessage.__all__) {
+                errorMessage = errorMessage.__all__[0]; // Handle form errors
+            } else if (typeof errorMessage !== 'string') {
+                errorMessage = 'Erreur lors de la promotion du transfert.';
+            }
+            showAlert('danger', errorMessage);
 
             // Reset button state
             btn.disabled = false;
