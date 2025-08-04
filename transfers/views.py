@@ -284,7 +284,8 @@ def promote_draft_transfer(request, transfer_id):
         })
 
     except ValidationError as e:
-        return JsonResponse({'error': str(e)}, status=400)
+        error_message = e.messages[0] if e.messages else str(e)
+        return JsonResponse({'error': error_message}, status=400)
 
 
 @login_required
