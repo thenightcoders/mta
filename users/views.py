@@ -87,8 +87,11 @@ def manager_dashboard(request):
         context = get_manager_dashboard_data(request.user)
         return render(request, 'users/manager_dashboard.html', context)
     except PermissionError as e:
-        logger.warning(f"Dashboard access denied for {request.user.username}: {e}")
-        return HttpResponseForbidden(_("Accès réfusé"))
+        if request.user.is_agent():
+            return redirect('agent_dashboard')
+        else:
+            logger.warning(f"Dashboard access denied for {request.user.username}: {e}")
+            return HttpResponseForbidden(_("Accès réfusé"))
     except Exception as e:
         logger.error(f"Manager dashboard error for {request.user.username}: {e}", exc_info=True)
         messages.error(request, _("Une erreur est survenue lors du chargement du tableau de bord"))
@@ -102,8 +105,11 @@ def agent_dashboard(request):
         context = get_agent_dashboard_data(request.user)
         return render(request, 'users/agent_dashboard.html', context)
     except PermissionError as e:
-        logger.warning(f"Agent dashboard access denied for {request.user.username}: {e}")
-        return HttpResponseForbidden(_("Accès réfusé"))
+        if request.user.is_superuser:
+            return redirect('manager_dashboard')
+        else:
+            logger.error(f"Agent dashboard access denied for {request.user.username}: {e}")
+            return HttpResponseForbidden(_("Accès réfusé"))
     except Exception as e:
         logger.error(f"Agent dashboard error for {request.user.username}: {e}", exc_info=True)
         messages.error(request, _("Une erreur est survenue lors du chargement du tableau de bord"))
