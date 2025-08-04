@@ -73,6 +73,7 @@ def notify_managers_of_draft_transfer(transfer, agent):
     Service function to notify managers about draft transfer creation.
     Simple wrapper that calls the email service.
     """
+    logger.warning("Notifying managers of draft transfer creation")
     try:
         from email_service.services import notify_managers_of_draft_transfer as email_notify
         return email_notify(transfer.id, agent.id)
@@ -86,6 +87,7 @@ def notify_agents_of_auto_promotion(promoted_transfers_data, commission_config_i
     Service function to notify agents about auto-promotion.
     Simple wrapper that calls the email service.
     """
+    logger.warning("Notifying agents of auto-promotion")
     try:
         from email_service.services import notify_agents_of_auto_promotion as email_notify
         return email_notify(promoted_transfers_data, commission_config_id)
@@ -99,6 +101,7 @@ def notify_agent_of_manual_promotion(transfer, promoted_by_user):
     Service function to notify agent about manual promotion.
     Simple wrapper that calls the email service.
     """
+    logger.warning("Notifying agent of manual promotion")
     try:
         from email_service.services import notify_agent_of_manual_promotion as email_notify
         return email_notify(transfer.id, promoted_by_user.id)
