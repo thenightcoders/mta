@@ -124,7 +124,9 @@ def create_transfer(request):
 
                         try:
                             logger.warning("Calling notify_managers_of_draft_transfer")
+                            print("About to import services")
                             from .services import notify_managers_of_draft_transfer
+                            print("Import successful")
                             notify_managers_of_draft_transfer(transfer, request.user)
                         except Exception as e:
                             # Don't break transfer creation if email fails

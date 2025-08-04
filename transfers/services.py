@@ -73,12 +73,25 @@ def notify_managers_of_draft_transfer(transfer, agent):
     Service function to notify managers about draft transfer creation.
     Simple wrapper that calls the email service.
     """
-    logger.warning("Notifying managers of draft transfer creation")
+    logger.warning("🔥 STEP 1: Entered notify_managers_of_draft_transfer function")
+    logger.warning(f"🔥 STEP 2: Transfer ID: {transfer.id}, Agent ID: {agent.id}")
+
     try:
+        logger.warning("🔥 STEP 3: About to import email_service")
         from email_service.services import notify_managers_of_draft_transfer as email_notify
-        return email_notify(transfer.id, agent.id)
+        logger.warning("🔥 STEP 4: Email service import successful")
+
+        logger.warning(f"🔥 STEP 5: Calling email_notify with transfer_id={transfer.id}, agent_id={agent.id}")
+        result = email_notify(transfer.id, agent.id)
+        logger.warning(f"🔥 STEP 6: Email service returned: {result}")
+
+        return result
+
+    except ImportError as e:
+        logger.error(f"🔥 IMPORT ERROR: Failed to import email service: {e}", exc_info=True)
+        return {'success': 0, 'failed': 1, 'total': 1, 'errors': [f'Import error: {str(e)}']}
     except Exception as e:
-        logger.error(f"Draft transfer notification service failed: {e}", exc_info=True)
+        logger.error(f"🔥 GENERAL ERROR: Draft transfer notification service failed: {e}", exc_info=True)
         return {'success': 0, 'failed': 1, 'total': 1, 'errors': [str(e)]}
 
 
